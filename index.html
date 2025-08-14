@@ -65,6 +65,7 @@
       streak: "foodle:streak",
       best: "foodle:bestStreak",
       practice: "foodle:practiceMode",
+      seenHelp: "foodle:seenHelp",
     };
     function isoDate(d = new Date()) {
       const dt = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -334,6 +335,63 @@
       { tile: "bg-purple-200 border-purple-400", header: "bg-purple-100 border-purple-300" },
     ];
 
+    // ---------------- Help Sheet ----------------
+    function HelpSheet({ open, onClose }) {
+      if (!open) return null;
+
+      const example = {
+        title: "Example",
+        groups: [
+          { name:"High‑Protein Dairy", items:["Greek Yogurt","Cottage Cheese","Skyr","Fairlife Milk"], color:"bg-yellow-100 border-yellow-300" },
+          { name:"Citrus Fruits", items:["Orange","Grapefruit","Lemon","Lime"], color:"bg-green-100 border-green-300" },
+          { name:"Lean White Fish", items:["Cod","Haddock","Tilapia","Pollock"], color:"bg-blue-100 border-blue-300" },
+          { name:"Sugary Candies", items:["Gummy Bears","Lollipop","Licorice","Caramel"], color:"bg-purple-100 border-purple-300" },
+        ]
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          {/* backdrop */}
+          <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+          {/* sheet/card */}
+          <div className="relative w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl border p-4 sm:p-6 max-h-[90vh] overflow-auto"
+               style={{paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)"}}>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-lg font-semibold">How to Play</h2>
+              <button onClick={onClose} className="rounded-lg border px-2 py-1 text-xs hover:bg-gray-100">Close</button>
+            </div>
+            <ol className="list-decimal pl-5 space-y-2 text-sm">
+              <li>Tap <span className="font-semibold">4 tiles</span> that belong together.</li>
+              <li>Press <span className="font-semibold">Submit</span>. If correct, they lock as a group.</li>
+              <li>There are <span className="font-semibold">4 groups</span> total. You get up to <span className="font-semibold">4 mistakes</span>.</li>
+              <li><span className="font-semibold">Daily</span> = today’s puzzle only. Turn on <span className="font-semibold">Practice</span> to browse any day.</li>
+              <li>Share your grid when you finish!</li>
+            </ol>
+
+            <div className="mt-4">
+              <div className="text-sm font-semibold mb-2">Quick Example</div>
+              <div className="grid grid-cols-1 gap-3">
+                {example.groups.map((g, i) => (
+                  <div key={i} className={`rounded-xl p-3 border ${g.color}`}>
+                    <div className="text-sm font-semibold">{g.name}</div>
+                    <div className="mt-1 text-sm">{g.items.join(", ")}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4 text-xs text-gray-500">
+              Tip: Solved groups color‑code by order: yellow → green → blue → purple.
+            </div>
+
+            <div className="mt-4 flex justify-end">
+              <button onClick={onClose} className="px-4 py-2 rounded-xl bg-black text-white text-sm">Got it</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // ---------------- App ----------------
     function App() {
       const [selected, setSelected] = React.useState([]);
@@ -343,13 +401,19 @@
       const [shake, setShake] = React.useState(false);
       const [dayOverride, setDayOverride] = React.useState(null);
 
-      // Practice toggle + streaks
+      // Practice toggle + streaks + help
       const [practiceMode, setPracticeMode] = React.useState(() => localStorage.getItem(LS_KEYS.practice) === "1");
       const [streak, setStreak] = React.useState(() => parseInt(localStorage.getItem(LS_KEYS.streak) || "0", 10));
       const [bestStreak, setBestStreak] = React.useState(() => parseInt(localStorage.getItem(LS_KEYS.best) || "0", 10));
+      const [showHelp, setShowHelp] = React.useState(() => localStorage.getItem(LS_KEYS.seenHelp) ? false : true);
+
       React.useEffect(() => {
         localStorage.setItem(LS_KEYS.practice, practiceMode ? "1" : "0");
       }, [practiceMode]);
+
+      React.useEffect(() => {
+        if (!showHelp) localStorage.setItem(LS_KEYS.seenHelp, "1");
+      }, [showHelp]);
 
       const todayIndex = getDayIndex();
       const dayIndex = practiceMode ? (dayOverride !== null ? dayOverride : todayIndex) : todayIndex;
@@ -473,14 +537,21 @@
       const blockPlay = !practiceMode && !isToday;
 
       return (
-        <div className="min-h-screen w-full flex items-center justify-center bg-neutral-50 p-4">
+        <div className="min-h-screen w-full flex items-center justify-center bg-neutral-50 p-3"
+             style={{paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)", paddingTop:"calc(env(safe-area-inset-top) + 12px)"}}>
           <div className="w-full max-w-xl">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className="text-2xl font-bold">Foodle</h1>
                 <p className="text-sm opacity-70">Daily Nutrition Connections</p>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={()=>setShowHelp(true)}
+                  aria-label="How to Play"
+                  title="How to Play"
+                  className="rounded-xl border px-3 py-2 text-xs hover:bg-gray-100"
+                >?</button>
                 <div className="text-xs text-gray-600">
                   <div><span className="font-semibold">Streak:</span> {streak}</div>
                   <div><span className="font-semibold">Best:</span> {bestStreak}</div>
@@ -496,7 +567,7 @@
               </div>
             </div>
 
-            <div className="mb-3 flex items-center gap-2">
+            <div className="mb-2 flex items-center gap-2">
               <label className="text-xs opacity-60">Puzzle:</label>
               <select
                 value={dayIndex}
@@ -512,11 +583,10 @@
               </label>
               <button onClick={resetDay} className="text-xs px-2 py-1 rounded-md border hover:bg-gray-100">Reset</button>
             </div>
-            {!practiceMode && (
-              <div className="text-[11px] text-gray-500 mb-2">
-                Daily mode: only today’s puzzle is playable. Toggle Practice to browse.
-              </div>
-            )}
+
+            <div className="mb-3">
+              <button onClick={()=>setShowHelp(true)} className="text-[12px] underline text-blue-600">How to Play & Example</button>
+            </div>
 
             {lockedGroups.length > 0 && (
               <div className="grid grid-cols-1 gap-3 w-full mb-3">
@@ -543,7 +613,7 @@
                     disabled={isLocked || gameWon || gameOver || blockPlay}
                     onClick={() => toggleSelect(tile.id)}
                     className={
-                      "h-16 sm:h-20 rounded-2xl border text-sm sm:text-base px-2 flex items-center justify-center text-center transition-all " +
+                      "h-14 sm:h-20 rounded-2xl border text-sm sm:text-base px-2 flex items-center justify-center text-center leading-snug transition-all " +
                       (isLocked ? `${color} cursor-default` :
                         blockPlay ? "bg-gray-100 border-gray-200 cursor-not-allowed" :
                         isSelected ? "bg-blue-100 border-blue-300" :
@@ -560,13 +630,13 @@
               <button
                 onClick={submitGuess}
                 disabled={selected.length !== 4 || gameWon || gameOver || blockPlay}
-                className="px-4 py-2 rounded-xl bg-black text-white disabled:opacity-40"
+                className="px-4 py-3 rounded-xl bg-black text-white text-sm sm:text-base disabled:opacity-40"
               >
                 {blockPlay ? "Locked (Daily)" : "Submit (4)"}
               </button>
-              <button onClick={() => setSelected([])} disabled={selected.length === 0 || gameWon || gameOver} className="px-4 py-2 rounded-xl border">Deselect</button>
-              <button onClick={shuffleRemaining} disabled={gameWon || gameOver || blockPlay} className="px-4 py-2 rounded-xl border">Shuffle</button>
-              <button onClick={copyShare} className="ml-auto px-4 py-2 rounded-xl border">Share</button>
+              <button onClick={() => setSelected([])} disabled={selected.length === 0 || gameWon || gameOver} className="px-4 py-3 rounded-xl border text-sm sm:text-base">Deselect</button>
+              <button onClick={shuffleRemaining} disabled={gameWon || gameOver || blockPlay} className="px-4 py-3 rounded-xl border text-sm sm:text-base">Shuffle</button>
+              <button onClick={copyShare} className="ml-auto px-4 py-3 rounded-xl border text-sm sm:text-base">Share</button>
             </div>
 
             {(gameWon || gameOver) && (
@@ -592,11 +662,14 @@
               </div>
             )}
 
-            <div className="mt-6 text-center text-xs opacity-60">
-              <div>Tap 4 foods that belong together. 4 categories total. Max 4 mistakes.</div>
-              <div className="mt-1">Solved groups color-code by order: yellow → green → blue → purple.</div>
+            <div className="mt-6 text-center text-xs opacity-60 space-y-1">
+              <div>Select 4 related foods. Lock all 4 groups with at most 4 mistakes.</div>
+              <div>Daily mode = today only. Switch to Practice to browse.</div>
             </div>
           </div>
+
+          {/* Help Sheet */}
+          <HelpSheet open={showHelp} onClose={()=>setShowHelp(false)} />
         </div>
       );
     }
@@ -606,5 +679,3 @@
   </script>
 </body>
 </html>
-
-
