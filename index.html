@@ -3,347 +3,343 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FOODLE · Daily Nutrition Game</title>
-  <meta name="description" content="FOODLE is a daily nutrition guessing game. Come back each day for a new food!" />
+  <title>Foodle — Daily Nutrition Connections</title>
+  <meta name="description" content="Foodle: a Connections-style nutrition game. Group foods into 4 correct categories." />
+  <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🥦</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
-    :root{
-      --bg:#eef6ff;          /* inviting soft blue */
-      --card:#ffffff;        /* white card */
-      --text:#0f172a;        /* slate-900 */
-      --muted:#64748b;       /* slate-500 */
-      --accent:#2563eb;      /* blue-600 */
-      --success:#16a34a;     /* green-600 */
-      --warn:#f59e0b;        /* amber-500 */
-      --error:#dc2626;       /* red-600 */
-      --shadow:0 12px 30px rgba(15,23,42,.12), 0 4px 10px rgba(15,23,42,.06);
-      --radius:16px;
-      --radius-sm:12px;
+    html, body { height: 100%; }
+    body {
+      background:
+        radial-gradient(1200px 600px at 20% -10%, #dbeafe 0%, rgba(219,234,254,0) 70%),
+        radial-gradient(900px 500px at 100% 10%, #e0f2fe 0%, rgba(224,242,254,0) 60%),
+        #eef6ff;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      background:radial-gradient(1200px 600px at 20% -10%, #dbeafe 0%, rgba(219,234,254,0) 70%),
-                 radial-gradient(900px 500px at 100% 10%, #e0f2fe 0%, rgba(224,242,254,0) 60%),
-                 var(--bg);
-      color:var(--text);
-      display:flex; align-items:center; justify-content:center;
-    }
-    .wrap{ width:100%; max-width:860px; padding:24px; }
-    .card{
-      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
-      padding:clamp(18px, 3.5vw, 28px); position:relative; overflow:hidden;
-    }
-    header{
-      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:12px;
-    }
-    .brand{display:flex; align-items:center; gap:10px}
-    .logo{
-      width:40px; height:40px; border-radius:10px; display:grid; place-items:center; color:white; font-weight:800;
-      background:linear-gradient(135deg, #10b981, #3b82f6);
-      box-shadow:0 8px 16px rgba(59,130,246,.25);
-    }
-    h1{font-size:clamp(22px, 4vw, 32px); margin:0}
-    .date-tag{font-size:14px; color:var(--muted)}
-
-    /* directions */
-    .directions{ background:#f8fafc; border:1px solid #e2e8f0; border-radius:var(--radius-sm); padding:14px 14px 6px; margin:8px 0 16px }
-    .directions details{ margin-top:8px }
-    .directions summary{ cursor:pointer; color:var(--accent); font-weight:600 }
-    .directions p{ margin:0 0 8px; color:#334155; line-height:1.4 }
-    .chip{display:inline-block; font-size:12px; background:#e2e8f0; color:#334155; padding:3px 8px; border-radius:999px; margin-right:6px}
-
-    .food-row{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
-    .food-tag{ font-weight:700; background:#eff6ff; color:#1d4ed8; padding:6px 10px; border-radius:999px; }
-
-    /* form */
-    form{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; margin-top:10px }
-    label{ font-size:14px; color:#334155; }
-    .input{
-      display:flex; align-items:center; gap:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px 12px;
-    }
-    .input input{ width:100%; border:0; outline:none; background:transparent; font-size:16px }
-    .u{ color:#64748b; font-size:13px }
-    .btn{
-      grid-column:1/-1; appearance:none; border:0; background:var(--accent); color:white; padding:12px 16px; border-radius:12px; font-weight:700; font-size:16px; cursor:pointer;
-      transition:transform .04s ease, filter .2s ease; box-shadow:0 8px 16px rgba(37,99,235,.25);
-    }
-    .btn:active{ transform:translateY(1px) }
-    .btn[disabled]{opacity:.6; cursor:not-allowed; filter:saturate(.5)}
-
-    .status{ margin-top:12px; padding:10px 12px; border-radius:12px; background:#f1f5f9; color:#0f172a; display:flex; align-items:center; gap:8px }
-    .status .dot{ width:10px; height:10px; border-radius:50%; background:#334155 }
-    .status.success{ background:#ecfdf5; color:#065f46 }
-    .status.success .dot{ background:var(--success) }
-    .status.warn{ background:#fffbeb; color:#92400e }
-    .status.warn .dot{ background:var(--warn) }
-    .status.error{ background:#fef2f2; color:#7f1d1d }
-    .status.error .dot{ background:var(--error) }
-
-    .result{ margin-top:14px; display:none }
-    .result .grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:10px }
-    .box{ background:#f8fafc; border:1px solid #e2e8f0; padding:10px; border-radius:12px; text-align:center }
-    .box .k{ font-size:12px; color:#64748b }
-    .box .v{ font-weight:800; font-size:18px; margin-top:2px }
-
-    .coach{ margin-top:14px; padding:12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; color:#14532d }
-
-    footer{ text-align:center; margin-top:16px; color:var(--muted); font-size:14px }
-    footer strong{ color:#111827 }
-
-    /* mobile tweaks */
-    @media (max-width:640px){
-      .food-row{ gap:8px }
-      form{ grid-template-columns:1fr; }
-      .result .grid{ grid-template-columns:repeat(2, 1fr) }
-    }
+    .shake { animation: shake 0.2s linear; }
+    @keyframes shake { 0%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}100%{transform:translateX(0)} }
+    button:disabled { cursor: not-allowed; }
   </style>
 </head>
-<body>
-  <div class="wrap">
-    <div class="card" role="main" aria-labelledby="title">
-      <header>
-        <div class="brand">
-          <div class="logo" aria-hidden="true">F</div>
-          <h1 id="title">FOODLE</h1>
-        </div>
-        <div class="date-tag" id="dateTag"></div>
-      </header>
+<body class="min-h-screen w-full flex items-center justify-center p-3">
+  <div id="root" className="w-full max-w-3xl"></div>
 
-      <section class="directions" aria-labelledby="how">
-        <div>
-          <span class="chip">Simple rules</span>
-          <span class="chip">Mobile‑friendly</span>
-          <span class="chip">New puzzle daily</span>
-        </div>
-        <p id="how"><strong>Guess today’s macros</strong> for the featured food. Enter calories, protein, carbs, and fat. You get <strong>5 tries</strong>. Hints will tell you if you’re high or low. When you’re done, you’ll see the real answer and a quick coach tip.</p>
-        <details>
-          <summary>Show a quick example</summary>
-          <p>For “Grilled Chicken Breast (4 oz)”, a guess of <em>120 Cals, 25g protein, 0g carbs, 2g fat</em> would be very close (the hint might say most are “✓ close”).</p>
-        </details>
-      </section>
+  <script type="text/babel">
+    // ===== Utility Functions =====
+    function isoDate() {
+      return new Date().toISOString().split("T")[0];
+    }
+    function getDayIndex() {
+      const start = new Date("2024-08-01");
+      const today = new Date();
+      return Math.floor((today - start) / (1000 * 60 * 60 * 24));
+    }
+    function shuffleArray(arr, seed) {
+      const copy = [...arr];
+      let m = copy.length, t, i;
+      while (m) {
+        i = Math.floor(Math.random() * m--);
+        t = copy[m];
+        copy[m] = copy[i];
+        copy[i] = t;
+      }
+      return copy;
+    }
+    function flattenPuzzle(p) {
+      return p.groups.flatMap(g => g.items.map(item => ({ ...item, group: g.name, color: g.color })));
+    }
 
-      <div class="food-row">
-        <div class="food-tag" id="foodName">Loading…</div>
-        <div class="chip" id="serving"></div>
-      </div>
-
-      <form id="guessForm" autocomplete="off">
-        <div>
-          <label>Calories
-            <div class="input"><input inputmode="numeric" pattern="[0-9]*" name="cal" placeholder="e.g., 210" required> <span class="u">kcal</span></div>
-          </label>
-        </div>
-        <div>
-          <label>Protein
-            <div class="input"><input inputmode="decimal" name="pro" placeholder="e.g., 24" required> <span class="u">g</span></div>
-          </label>
-        </div>
-        <div>
-          <label>Carbs
-            <div class="input"><input inputmode="decimal" name="carb" placeholder="e.g., 15" required> <span class="u">g</span></div>
-          </label>
-        </div>
-        <div>
-          <label>Fat
-            <div class="input"><input inputmode="decimal" name="fat" placeholder="e.g., 7" required> <span class="u">g</span></div>
-          </label>
-        </div>
-        <button class="btn" id="submitBtn" type="submit">Submit Guess</button>
-      </form>
-
-      <div class="status" id="status" aria-live="polite" style="display:none"><span class="dot"></span><span id="statusText"></span></div>
-
-      <div class="result" id="result">
-        <div class="grid">
-          <div class="box"><div class="k">Calories</div><div class="v" id="rcal">—</div></div>
-          <div class="box"><div class="k">Protein</div><div class="v" id="rpro">—</div></div>
-          <div class="box"><div class="k">Carbs</div><div class="v" id="rcarb">—</div></div>
-          <div class="box"><div class="k">Fat</div><div class="v" id="rfat">—</div></div>
-        </div>
-        <div class="coach" id="coachTip">Coach tip will appear here.</div>
-      </div>
-
-      <footer>
-        <div>© <span id="year"></span> <strong>80/20 Nutrition</strong>. All rights reserved.</div>
-      </footer>
-    </div>
-  </div>
-
-  <script>
-    // === DATA (a lightweight bank; add more anytime) ===
-    const FOODS = [
-      { name:"Grilled Chicken Breast", serving:"4 oz", cal:185, pro:35, carb:0, fat:4, tip:"Lean proteins keep you fuller on fewer calories." },
-      { name:"Greek Yogurt (Plain, 2%)", serving:"170 g (≈3/4 cup)", cal:130, pro:16, carb:7, fat:4, tip:"Pair with berries for a high‑protein, fiber‑rich snack." },
-      { name:"Oatmeal (Dry)", serving:"1/2 cup (40 g)", cal:150, pro:5, carb:27, fat:3, tip:"Add protein powder or egg whites to balance macros." },
-      { name:"Avocado", serving:"1/2 medium", cal:120, pro:1, carb:6, fat:11, tip:"Healthy fats help with meal satisfaction—watch portions." },
-      { name:"Salmon (Baked)", serving:"5 oz", cal:310, pro:34, carb:0, fat:18, tip:"Omega‑3s support heart health and recovery." },
-      { name:"Brown Rice (Cooked)", serving:"1 cup", cal:216, pro:5, carb:45, fat:2, tip:"Carbs fuel training; balance with protein for meals." },
-      { name:"Broccoli (Cooked)", serving:"1 cup", cal:55, pro:4, carb:11, fat:0.5, tip:"Low‑cal, high‑volume—great for hunger management." },
-      { name:"Whole Egg", serving:"1 large", cal:70, pro:6, carb:0.4, fat:5, tip:"Eggs are a budget‑friendly protein with nutrients." },
-      { name:"Almonds", serving:"1 oz (23)", cal:164, pro:6, carb:6, fat:14, tip:"A little goes a long way—measure a handful." },
-      { name:"Turkey Deli Slices", serving:"3 oz", cal:120, pro:18, carb:3, fat:3, tip:"Choose 0g added sugar per serving when possible." },
-      { name:"Cottage Cheese (2%)", serving:"1 cup", cal:200, pro:27, carb:8, fat:5, tip:"Great late‑night protein to support muscle repair." },
-      { name:"Banana", serving:"1 medium", cal:105, pro:1.3, carb:27, fat:0.4, tip:"Easy pre‑workout carb for quick energy." },
-      { name:"Quinoa (Cooked)", serving:"1 cup", cal:222, pro:8, carb:39, fat:3.5, tip:"Complete plant protein—mix with beans for fiber." },
-      { name:"Tilapia (Grilled)", serving:"5 oz", cal:210, pro:42, carb:0, fat:4, tip:"Ultra‑lean protein—season well to boost flavor." },
-      { name:"Protein Shake (Whey)", serving:"1 scoop in water", cal:120, pro:24, carb:3, fat:2, tip:"Convenient protein—add fruit if using as a snack." },
-      { name:"Sweet Potato (Baked)", serving:"200 g", cal:180, pro:4, carb:41, fat:0.2, tip:"High‑fiber carbs—great post‑workout." },
-      { name:"Olive Oil", serving:"1 tbsp", cal:120, pro:0, carb:0, fat:14, tip:"Track oils—calorie dense and easy to overpour." },
-      { name:"Ground Turkey (93% Lean)", serving:"4 oz cooked", cal:170, pro:23, carb:0, fat:8, tip:"Swap into tacos, bowls, or pasta for leaner meals." },
-      { name:"Black Beans (Cooked)", serving:"1/2 cup", cal:114, pro:7, carb:20, fat:0.5, tip:"Plant protein + fiber keeps you full longer." },
-      { name:"Apple", serving:"1 medium", cal:95, pro:0.5, carb:25, fat:0.3, tip:"Whole fruit > juice for satiety and fiber." },
-      // Add many more as needed—this list can be extended freely.
+    // ===== Sample Puzzle Data =====
+    const PUZZLES = [
+      {
+        id: "2025-08-14",
+        groups: [
+          { name: "High Protein Foods", color: "bg-green-300", items: [
+            { id: "chicken", text: "Chicken Breast" },
+            { id: "eggs", text: "Eggs" },
+            { id: "tuna", text: "Tuna" },
+            { id: "tofu", text: "Tofu" }
+          ]},
+          { name: "High Fiber Foods", color: "bg-yellow-300", items: [
+            { id: "beans", text: "Black Beans" },
+            { id: "oats", text: "Oats" },
+            { id: "broccoli", text: "Broccoli" },
+            { id: "chia", text: "Chia Seeds" }
+          ]},
+          { name: "Healthy Fats", color: "bg-red-300", items: [
+            { id: "avocado", text: "Avocado" },
+            { id: "almonds", text: "Almonds" },
+            { id: "oliveoil", text: "Olive Oil" },
+            { id: "salmon", text: "Salmon" }
+          ]},
+          { name: "Low Calorie Foods", color: "bg-blue-300", items: [
+            { id: "cucumber", text: "Cucumber" },
+            { id: "celery", text: "Celery" },
+            { id: "spinach", text: "Spinach" },
+            { id: "berries", text: "Berries" }
+          ]}
+        ]
+      }
     ];
 
-    // === UTILITIES ===
-    const clamp = (v, min, max)=> Math.max(min, Math.min(max, v));
-    const round1 = n => Math.round(n * 10)/10;
+    // ===== Local Storage Keys =====
+    const LS_KEYS = {
+      progressPrefix: "foodle:progress:",
+      finishedPrefix: "foodle:finished:",
+      seenPreview: "foodle:seenPreview"
+    };
 
-    // Simple daily seed from date (YYYY‑MM‑DD) -> deterministic index
-    function dailyIndex(dateStr){
-      let h=0; for(let i=0;i<dateStr.length;i++){ h = (h*31 + dateStr.charCodeAt(i)) >>> 0; }
-      return h % FOODS.length;
-    }
-
-    // Nice diff feedback per field
-    function hintText(guess, actual){
-      const d = Math.abs(guess - actual);
-      if (d <= 3) return "✓ very close";
-      if (d <= 10) return "close";
-      return guess > actual ? "too high" : "too low";
-    }
-
-    // === STATE ===
-    const maxTries = 5;
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth()+1).padStart(2,'0');
-    const dd = String(today.getDate()).padStart(2,'0');
-    const todayKey = `${yyyy}-${mm}-${dd}`;
-
-    // Prevent “going ahead”: use today only (local time). No future navigation UI provided.
-
-    // Pick today’s food deterministically
-    const pick = FOODS[dailyIndex(todayKey)];
-
-    // Restore progress for the day
-    const saveKey = `foodle:${todayKey}`;
-    const saved = JSON.parse(localStorage.getItem(saveKey) || 'null');
-
-    // === DOM HOOKS ===
-    const qs = s=>document.querySelector(s);
-    const dateTag = qs('#dateTag');
-    const foodName = qs('#foodName');
-    const serving = qs('#serving');
-    const yearEl = qs('#year');
-    const form = qs('#guessForm');
-    const statusBar = qs('#status');
-    const statusText = qs('#statusText');
-    const submitBtn = qs('#submitBtn');
-    const result = qs('#result');
-
-    const rcal = qs('#rcal'), rpro = qs('#rpro'), rcarb = qs('#rcarb'), rfat = qs('#rfat');
-    const coachTip = qs('#coachTip');
-
-    // Init UI
-    dateTag.textContent = new Date(todayKey + 'T00:00:00').toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric', year:'numeric' });
-    yearEl.textContent = yyyy;
-    foodName.textContent = pick.name;
-    serving.textContent = pick.serving;
-
-    let tries = saved?.tries ?? 0;
-    let finished = saved?.finished ?? false;
-
-    function setStatus(type, msg){
-      statusBar.style.display = 'flex';
-      statusBar.className = 'status ' + (type||'');
-      statusText.textContent = msg;
-    }
-
-    function persist(){
-      localStorage.setItem(saveKey, JSON.stringify({ tries, finished }));
-    }
-
-    function revealAnswer(){
-      result.style.display = 'block';
-      rcal.textContent = pick.cal + ' kcal';
-      rpro.textContent = pick.pro + ' g';
-      rcarb.textContent = pick.carb + ' g';
-      rfat.textContent = pick.fat + ' g';
-      coachTip.textContent = pick.tip;
-      submitBtn.disabled = true;
-    }
-
-    if(finished){
-      setStatus('success', 'You already played today. Come back tomorrow for a new food!');
-      revealAnswer();
-    } else if(tries>0){
-      setStatus('', `Welcome back—${maxTries-tries} ${maxTries-tries===1?'try':'tries'} left today.`);
-    }
-
-    form.addEventListener('submit', (e)=>{
-      e.preventDefault();
-      if (finished) return;
-
-      const data = new FormData(form);
-      const cal = Number(data.get('cal'));
-      const pro = Number(data.get('pro'));
-      const carb = Number(data.get('carb'));
-      const fat = Number(data.get('fat'));
-
-      if([cal,pro,carb,fat].some(n=>!isFinite(n) || n<0)){
-        setStatus('error','Please enter non‑negative numbers for all fields.');
-        return;
-      }
-
-      // Validate bounds to cut down on typos
-      if(cal>1500 || pro>150 || carb>200 || fat>150){
-        setStatus('warn','Those numbers look high—double‑check your entries.');
-      } else {
-        statusBar.style.display='none';
-      }
-
-      tries = clamp(tries+1, 0, maxTries);
-      persist();
-
-      // Feedback
-      const feedback = [
-        `Calories: ${hintText(cal, pick.cal)}`,
-        `Protein: ${hintText(pro, pick.pro)}`,
-        `Carbs: ${hintText(carb, pick.carb)}`,
-        `Fat: ${hintText(fat, pick.fat)}`,
-      ].join('  •  ');
-
-      // Check win (within tolerances)
-      const ok = Math.abs(cal-pick.cal)<=10 && Math.abs(pro-pick.pro)<=2 && Math.abs(carb-pick.carb)<=4 && Math.abs(fat-pick.fat)<=2;
-
-      if(ok){
-        setStatus('success', 'Nice! Nailed it. '+feedback);
-        finished = true; persist();
-        revealAnswer();
-      } else if(tries >= maxTries){
-        setStatus('error', 'Out of tries. Here’s the answer.');
-        finished = true; persist();
-        revealAnswer();
-      } else {
-        setStatus('', `${maxTries-tries} ${maxTries-tries===1?'try':'tries'} left — ${feedback}`);
-      }
-
-      form.reset();
-      // return focus to first input for speedy mobile play
-      form.querySelector('input[name="cal"]').focus();
-    });
-
-    // Accessibility: allow Enter to jump fields on mobile
-    Array.from(form.querySelectorAll('input')).forEach((el, idx, arr)=>{
-      el.addEventListener('keydown', (ev)=>{
-        if(ev.key==='Enter'){
-          ev.preventDefault();
-          (arr[idx+1]||submitBtn).focus();
+    // ===== Preview Page Component =====
+    function PreviewPage({ onStart }) {
+      const groups = [
+        {
+          name: "High-Protein Dairy",
+          items: ["Greek Yogurt", "Cottage Cheese", "Skyr", "Fairlife Milk"],
+          cls: "bg-yellow-50 border-yellow-200"
+        },
+        {
+          name: "Citrus Fruits",
+          items: ["Orange", "Grapefruit", "Lemon", "Lime"],
+          cls: "bg-green-50 border-green-200"
+        },
+        {
+          name: "Lean White Fish",
+          items: ["Cod", "Haddock", "Tilapia", "Pollock"],
+          cls: "bg-blue-50 border-blue-200"
+        },
+        {
+          name: "Sugary Candies",
+          items: ["Gummy Bears", "Lollipop", "Licorice", "Caramel"],
+          cls: "bg-purple-50 border-purple-200"
         }
-      });
-    });
+      ];
+
+      return (
+        <div className="bg-white shadow-lg rounded-xl p-5 w-full">
+          <h1 className="text-2xl font-bold mb-4">Welcome to Foodle</h1>
+          <p className="text-sm text-gray-600 mb-4">
+            Foodle is a daily nutrition game inspired by Connections. Group 16 foods into 4 categories of 4 foods each based on a shared theme.
+          </p>
+          <div className="rounded-xl border bg-white p-4 mb-4">
+            <div className="text-lg font-semibold mb-2">How to Play</div>
+            <ol className="list-decimal pl-5 space-y-2 text-sm text-gray-700 mb-4">
+              <li>Select <span className="font-semibold">four foods</span> you think belong together by clicking or tapping them.</li>
+              <li>Click <span className="font-semibold">Submit</span> to check if your group is correct.</li>
+              <li>Find all <span className="font-semibold">four groups</span>. You have <span className="font-semibold">four mistakes</span> before the game ends.</li>
+              <li>Groups are color-coded by difficulty: <span className="font-semibold">Yellow</span> (easiest), <span className="font-semibold">Green</span>, <span className="font-semibold">Blue</span>, <span className="font-semibold">Purple</span> (hardest).</li>
+              <li><span className="font-semibold">Daily</span> mode locks to today’s puzzle. Try <span className="font-semibold">Practice</span> mode to play freely.</li>
+            </ol>
+            <div className="text-lg font-semibold mb-2">Example Groups</div>
+            <div className="grid grid-cols-1 gap-3">
+              {groups.map((g, i) => (
+                <div key={i} className={`rounded-xl p-3 border ${g.cls}`}>
+                  <div className="text-sm font-semibold">{g.name}</div>
+                  <div className="mt-1 text-sm">{g.items.join(", ")}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <button
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            onClick={() => {
+              localStorage.setItem(LS_KEYS.seenPreview, "1");
+              onStart();
+            }}
+          >
+            Start Playing
+          </button>
+        </div>
+      );
+    }
+
+    // ===== Main App Component =====
+    function App() {
+      const dayIndex = getDayIndex() % PUZZLES.length;
+      const puzzle = PUZZLES[dayIndex];
+      const baseTiles = flattenPuzzle(puzzle);
+      const [tiles, setTiles] = React.useState([]);
+      const [selected, setSelected] = React.useState([]);
+      const [mistakes, setMistakes] = React.useState(0);
+      const [lockedGroups, setLockedGroups] = React.useState([]);
+      const [guesses, setGuesses] = React.useState([]);
+      const [practiceMode, setPracticeMode] = React.useState(false);
+      const [showPreview, setShowPreview] = React.useState(localStorage.getItem(LS_KEYS.seenPreview) !== "1");
+
+      const todayISO = isoDate();
+      const progressKey = `${LS_KEYS.progressPrefix}${todayISO}`;
+      const finishedKey = `${LS_KEYS.finishedPrefix}${todayISO}`;
+
+      // Load puzzle or saved progress
+      React.useEffect(() => {
+        if (showPreview) return;
+        const newSeed = Math.floor(Math.random() * 1e9);
+        const stored = localStorage.getItem(progressKey);
+
+        if (stored && !practiceMode) {
+          try {
+            const data = JSON.parse(stored);
+            if (data && data.puzzleId === PUZZLES[dayIndex].id) {
+              setSelected([]);
+              setMistakes(data.mistakes ?? 0);
+              setLockedGroups(data.lockedGroups ?? []);
+              setGuesses(data.guesses ?? []);
+
+              const lockedIds = new Set((data.lockedGroups || []).flatMap(g => g.items));
+              let rest = baseTiles.filter(t => !lockedIds.has(t.id));
+
+              if (Array.isArray(data.remainingOrder)) {
+                const map = new Map(rest.map(t => [t.id, t]));
+                rest = data.remainingOrder.map(id => map.get(id)).filter(Boolean);
+                const remainingSet = new Set(data.remainingOrder);
+                rest.push(...baseTiles.filter(t => !lockedIds.has(t.id) && !remainingSet.has(t.id)));
+              } else {
+                rest = shuffleArray(rest, newSeed);
+              }
+
+              const lockedFirst = [];
+              (data.lockedGroups || []).forEach(g => {
+                g.items.forEach(id => {
+                  const f = baseTiles.find(t => t.id === id);
+                  if (f) lockedFirst.push(f);
+                });
+              });
+
+              setTiles([...lockedFirst, ...rest]);
+              return;
+            }
+          } catch {}
+        }
+
+        setSelected([]);
+        setMistakes(0);
+        setLockedGroups([]);
+        setGuesses([]);
+        setTiles(shuffleArray(baseTiles, newSeed));
+      }, [dayIndex, practiceMode, showPreview]);
+
+      // Save progress
+      React.useEffect(() => {
+        if (practiceMode || showPreview) return;
+        const isToday = (dayIndex === getDayIndex());
+        if (!isToday) return;
+
+        const lockedIds = new Set(lockedGroups.flatMap(g => g.items));
+        const remainingOrder = tiles.filter(t => !lockedIds.has(t.id)).map(t => t.id);
+
+        const payload = {
+          puzzleId: PUZZLES[dayIndex].id,
+          mistakes,
+          lockedGroups,
+          guesses,
+          remainingOrder
+        };
+        localStorage.setItem(progressKey, JSON.stringify(payload));
+
+        const gameWon = lockedGroups.length === 4;
+        const gameOver = mistakes >= 4 && !gameWon;
+        if (gameWon || gameOver) {
+          localStorage.setItem(finishedKey, "1");
+        }
+      }, [mistakes, lockedGroups, guesses, tiles, practiceMode, dayIndex, showPreview]);
+
+      const finishedToday = !practiceMode && localStorage.getItem(finishedKey) === "1";
+      const gameWon = lockedGroups.length === 4;
+      const gameOver = mistakes >= 4 && !gameWon;
+      const blockPlay = (!practiceMode && dayIndex !== getDayIndex()) || finishedToday;
+
+      function toggleSelect(id) {
+        if (gameWon || gameOver || finishedToday || showPreview) return;
+        setSelected(sel =>
+          sel.includes(id) ? sel.filter(s => s !== id) : sel.length < 4 ? [...sel, id] : sel
+        );
+      }
+
+      function submitGuess() {
+        if (selected.length !== 4 || gameWon || gameOver || finishedToday || showPreview) return;
+        const groupNames = new Set(selected.map(id => baseTiles.find(t => t.id === id).group));
+        if (groupNames.size === 1) {
+          const groupName = [...groupNames][0];
+          const color = baseTiles.find(t => t.group === groupName).color;
+          setLockedGroups([...lockedGroups, { name: groupName, color, items: selected }]);
+          setTiles([...lockedGroups.flatMap(g => g.items), ...tiles.filter(t => !selected.includes(t.id))]);
+          setSelected([]);
+        } else {
+          setMistakes(m => m + 1);
+          setSelected([]);
+        }
+      }
+
+      if (showPreview) {
+        return <PreviewPage onStart={() => setShowPreview(false)} />;
+      }
+
+      return (
+        <div className="bg-white shadow-lg rounded-xl p-5 w-full">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-bold">Foodle</h1>
+            <button
+              className="text-sm text-blue-500 hover:underline"
+              onClick={() => setShowPreview(true)}
+            >
+              How to Play
+            </button>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            Group the foods into 4 correct categories. Select 4 items and press Submit.
+            Example: “Chicken, Eggs, Tofu, Tuna” → High Protein Foods.
+          </p>
+          {finishedToday && (
+            <div className="mb-3 rounded-xl border bg-amber-50 text-amber-900 p-3 text-sm">
+              You’ve completed today’s puzzle. Come back tomorrow!
+            </div>
+          )}
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            {tiles.map(t => {
+              const isLocked = lockedGroups.some(g => g.items.includes(t.id));
+              const isSelected = selected.includes(t.id);
+              return (
+                <button
+                  key={t.id}
+                  className={`p-2 rounded text-sm font-medium border 
+                    ${isLocked ? t.color : isSelected ? "bg-gray-300" : "bg-gray-100 hover:bg-gray-200"}`}
+                  disabled={isLocked || gameWon || gameOver || blockPlay}
+                  onClick={() => toggleSelect(t.id)}
+                >
+                  {t.text}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex gap-2 mb-4">
+            <button
+              className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
+              onClick={submitGuess}
+              disabled={selected.length !== 4 || gameWon || gameOver || blockPlay}
+            >
+              Submit
+            </button>
+            <button
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded"
+              onClick={() => setPracticeMode(!practiceMode)}
+            >
+              {practiceMode ? "Daily Mode" : "Practice Mode"}
+            </button>
+          </div>
+          <p className="mt-3 text-sm text-gray-600">
+            Mistakes: {mistakes} / 4
+          </p>
+          <footer className="mt-6 text-center text-gray-400 text-xs">
+            © 80/20 Nutrition
+          </footer>
+        </div>
+      );
+    }
+
+    // Render
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
   </script>
 </body>
 </html>
