@@ -3,679 +3,347 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Foodle — Daily Nutrition Connections</title>
-  <meta name="description" content="Foodle: a Connections-style nutrition game. Group foods into 4 correct categories." />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🥦</text></svg>">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <title>FOODLE · Daily Nutrition Game</title>
+  <meta name="description" content="FOODLE is a daily nutrition guessing game. Come back each day for a new food!" />
   <style>
-    html, body { height: 100%; background:#fafafa; }
-    .shake { animation: shake 0.2s linear; }
-    @keyframes shake { 0%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}100%{transform:translateX(0)} }
-    button:disabled { cursor: not-allowed; }
+    :root{
+      --bg:#eef6ff;          /* inviting soft blue */
+      --card:#ffffff;        /* white card */
+      --text:#0f172a;        /* slate-900 */
+      --muted:#64748b;       /* slate-500 */
+      --accent:#2563eb;      /* blue-600 */
+      --success:#16a34a;     /* green-600 */
+      --warn:#f59e0b;        /* amber-500 */
+      --error:#dc2626;       /* red-600 */
+      --shadow:0 12px 30px rgba(15,23,42,.12), 0 4px 10px rgba(15,23,42,.06);
+      --radius:16px;
+      --radius-sm:12px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background:radial-gradient(1200px 600px at 20% -10%, #dbeafe 0%, rgba(219,234,254,0) 70%),
+                 radial-gradient(900px 500px at 100% 10%, #e0f2fe 0%, rgba(224,242,254,0) 60%),
+                 var(--bg);
+      color:var(--text);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .wrap{ width:100%; max-width:860px; padding:24px; }
+    .card{
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:clamp(18px, 3.5vw, 28px); position:relative; overflow:hidden;
+    }
+    header{
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:12px;
+    }
+    .brand{display:flex; align-items:center; gap:10px}
+    .logo{
+      width:40px; height:40px; border-radius:10px; display:grid; place-items:center; color:white; font-weight:800;
+      background:linear-gradient(135deg, #10b981, #3b82f6);
+      box-shadow:0 8px 16px rgba(59,130,246,.25);
+    }
+    h1{font-size:clamp(22px, 4vw, 32px); margin:0}
+    .date-tag{font-size:14px; color:var(--muted)}
+
+    /* directions */
+    .directions{ background:#f8fafc; border:1px solid #e2e8f0; border-radius:var(--radius-sm); padding:14px 14px 6px; margin:8px 0 16px }
+    .directions details{ margin-top:8px }
+    .directions summary{ cursor:pointer; color:var(--accent); font-weight:600 }
+    .directions p{ margin:0 0 8px; color:#334155; line-height:1.4 }
+    .chip{display:inline-block; font-size:12px; background:#e2e8f0; color:#334155; padding:3px 8px; border-radius:999px; margin-right:6px}
+
+    .food-row{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+    .food-tag{ font-weight:700; background:#eff6ff; color:#1d4ed8; padding:6px 10px; border-radius:999px; }
+
+    /* form */
+    form{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; margin-top:10px }
+    label{ font-size:14px; color:#334155; }
+    .input{
+      display:flex; align-items:center; gap:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px 12px;
+    }
+    .input input{ width:100%; border:0; outline:none; background:transparent; font-size:16px }
+    .u{ color:#64748b; font-size:13px }
+    .btn{
+      grid-column:1/-1; appearance:none; border:0; background:var(--accent); color:white; padding:12px 16px; border-radius:12px; font-weight:700; font-size:16px; cursor:pointer;
+      transition:transform .04s ease, filter .2s ease; box-shadow:0 8px 16px rgba(37,99,235,.25);
+    }
+    .btn:active{ transform:translateY(1px) }
+    .btn[disabled]{opacity:.6; cursor:not-allowed; filter:saturate(.5)}
+
+    .status{ margin-top:12px; padding:10px 12px; border-radius:12px; background:#f1f5f9; color:#0f172a; display:flex; align-items:center; gap:8px }
+    .status .dot{ width:10px; height:10px; border-radius:50%; background:#334155 }
+    .status.success{ background:#ecfdf5; color:#065f46 }
+    .status.success .dot{ background:var(--success) }
+    .status.warn{ background:#fffbeb; color:#92400e }
+    .status.warn .dot{ background:var(--warn) }
+    .status.error{ background:#fef2f2; color:#7f1d1d }
+    .status.error .dot{ background:var(--error) }
+
+    .result{ margin-top:14px; display:none }
+    .result .grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:10px }
+    .box{ background:#f8fafc; border:1px solid #e2e8f0; padding:10px; border-radius:12px; text-align:center }
+    .box .k{ font-size:12px; color:#64748b }
+    .box .v{ font-weight:800; font-size:18px; margin-top:2px }
+
+    .coach{ margin-top:14px; padding:12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; color:#14532d }
+
+    footer{ text-align:center; margin-top:16px; color:var(--muted); font-size:14px }
+    footer strong{ color:#111827 }
+
+    /* mobile tweaks */
+    @media (max-width:640px){
+      .food-row{ gap:8px }
+      form{ grid-template-columns:1fr; }
+      .result .grid{ grid-template-columns:repeat(2, 1fr) }
+    }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div class="wrap">
+    <div class="card" role="main" aria-labelledby="title">
+      <header>
+        <div class="brand">
+          <div class="logo" aria-hidden="true">F</div>
+          <h1 id="title">FOODLE</h1>
+        </div>
+        <div class="date-tag" id="dateTag"></div>
+      </header>
 
-  <script type="text/babel">
-    // ---------------- Utils ----------------
-    function shuffleArray(arr, seed = null) {
-      let a = [...arr];
-      let random = Math.random;
-      if (seed !== null) {
-        let t = seed;
-        random = function () {
-          t |= 0; t = t + 0x6D2B79F5 | 0; let r = Math.imul(t ^ (t >>> 15), 1 | t);
-          r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
-          return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
-        };
+      <section class="directions" aria-labelledby="how">
+        <div>
+          <span class="chip">Simple rules</span>
+          <span class="chip">Mobile‑friendly</span>
+          <span class="chip">New puzzle daily</span>
+        </div>
+        <p id="how"><strong>Guess today’s macros</strong> for the featured food. Enter calories, protein, carbs, and fat. You get <strong>5 tries</strong>. Hints will tell you if you’re high or low. When you’re done, you’ll see the real answer and a quick coach tip.</p>
+        <details>
+          <summary>Show a quick example</summary>
+          <p>For “Grilled Chicken Breast (4 oz)”, a guess of <em>120 Cals, 25g protein, 0g carbs, 2g fat</em> would be very close (the hint might say most are “✓ close”).</p>
+        </details>
+      </section>
+
+      <div class="food-row">
+        <div class="food-tag" id="foodName">Loading…</div>
+        <div class="chip" id="serving"></div>
+      </div>
+
+      <form id="guessForm" autocomplete="off">
+        <div>
+          <label>Calories
+            <div class="input"><input inputmode="numeric" pattern="[0-9]*" name="cal" placeholder="e.g., 210" required> <span class="u">kcal</span></div>
+          </label>
+        </div>
+        <div>
+          <label>Protein
+            <div class="input"><input inputmode="decimal" name="pro" placeholder="e.g., 24" required> <span class="u">g</span></div>
+          </label>
+        </div>
+        <div>
+          <label>Carbs
+            <div class="input"><input inputmode="decimal" name="carb" placeholder="e.g., 15" required> <span class="u">g</span></div>
+          </label>
+        </div>
+        <div>
+          <label>Fat
+            <div class="input"><input inputmode="decimal" name="fat" placeholder="e.g., 7" required> <span class="u">g</span></div>
+          </label>
+        </div>
+        <button class="btn" id="submitBtn" type="submit">Submit Guess</button>
+      </form>
+
+      <div class="status" id="status" aria-live="polite" style="display:none"><span class="dot"></span><span id="statusText"></span></div>
+
+      <div class="result" id="result">
+        <div class="grid">
+          <div class="box"><div class="k">Calories</div><div class="v" id="rcal">—</div></div>
+          <div class="box"><div class="k">Protein</div><div class="v" id="rpro">—</div></div>
+          <div class="box"><div class="k">Carbs</div><div class="v" id="rcarb">—</div></div>
+          <div class="box"><div class="k">Fat</div><div class="v" id="rfat">—</div></div>
+        </div>
+        <div class="coach" id="coachTip">Coach tip will appear here.</div>
+      </div>
+
+      <footer>
+        <div>© <span id="year"></span> <strong>80/20 Nutrition</strong>. All rights reserved.</div>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    // === DATA (a lightweight bank; add more anytime) ===
+    const FOODS = [
+      { name:"Grilled Chicken Breast", serving:"4 oz", cal:185, pro:35, carb:0, fat:4, tip:"Lean proteins keep you fuller on fewer calories." },
+      { name:"Greek Yogurt (Plain, 2%)", serving:"170 g (≈3/4 cup)", cal:130, pro:16, carb:7, fat:4, tip:"Pair with berries for a high‑protein, fiber‑rich snack." },
+      { name:"Oatmeal (Dry)", serving:"1/2 cup (40 g)", cal:150, pro:5, carb:27, fat:3, tip:"Add protein powder or egg whites to balance macros." },
+      { name:"Avocado", serving:"1/2 medium", cal:120, pro:1, carb:6, fat:11, tip:"Healthy fats help with meal satisfaction—watch portions." },
+      { name:"Salmon (Baked)", serving:"5 oz", cal:310, pro:34, carb:0, fat:18, tip:"Omega‑3s support heart health and recovery." },
+      { name:"Brown Rice (Cooked)", serving:"1 cup", cal:216, pro:5, carb:45, fat:2, tip:"Carbs fuel training; balance with protein for meals." },
+      { name:"Broccoli (Cooked)", serving:"1 cup", cal:55, pro:4, carb:11, fat:0.5, tip:"Low‑cal, high‑volume—great for hunger management." },
+      { name:"Whole Egg", serving:"1 large", cal:70, pro:6, carb:0.4, fat:5, tip:"Eggs are a budget‑friendly protein with nutrients." },
+      { name:"Almonds", serving:"1 oz (23)", cal:164, pro:6, carb:6, fat:14, tip:"A little goes a long way—measure a handful." },
+      { name:"Turkey Deli Slices", serving:"3 oz", cal:120, pro:18, carb:3, fat:3, tip:"Choose 0g added sugar per serving when possible." },
+      { name:"Cottage Cheese (2%)", serving:"1 cup", cal:200, pro:27, carb:8, fat:5, tip:"Great late‑night protein to support muscle repair." },
+      { name:"Banana", serving:"1 medium", cal:105, pro:1.3, carb:27, fat:0.4, tip:"Easy pre‑workout carb for quick energy." },
+      { name:"Quinoa (Cooked)", serving:"1 cup", cal:222, pro:8, carb:39, fat:3.5, tip:"Complete plant protein—mix with beans for fiber." },
+      { name:"Tilapia (Grilled)", serving:"5 oz", cal:210, pro:42, carb:0, fat:4, tip:"Ultra‑lean protein—season well to boost flavor." },
+      { name:"Protein Shake (Whey)", serving:"1 scoop in water", cal:120, pro:24, carb:3, fat:2, tip:"Convenient protein—add fruit if using as a snack." },
+      { name:"Sweet Potato (Baked)", serving:"200 g", cal:180, pro:4, carb:41, fat:0.2, tip:"High‑fiber carbs—great post‑workout." },
+      { name:"Olive Oil", serving:"1 tbsp", cal:120, pro:0, carb:0, fat:14, tip:"Track oils—calorie dense and easy to overpour." },
+      { name:"Ground Turkey (93% Lean)", serving:"4 oz cooked", cal:170, pro:23, carb:0, fat:8, tip:"Swap into tacos, bowls, or pasta for leaner meals." },
+      { name:"Black Beans (Cooked)", serving:"1/2 cup", cal:114, pro:7, carb:20, fat:0.5, tip:"Plant protein + fiber keeps you full longer." },
+      { name:"Apple", serving:"1 medium", cal:95, pro:0.5, carb:25, fat:0.3, tip:"Whole fruit > juice for satiety and fiber." },
+      // Add many more as needed—this list can be extended freely.
+    ];
+
+    // === UTILITIES ===
+    const clamp = (v, min, max)=> Math.max(min, Math.min(max, v));
+    const round1 = n => Math.round(n * 10)/10;
+
+    // Simple daily seed from date (YYYY‑MM‑DD) -> deterministic index
+    function dailyIndex(dateStr){
+      let h=0; for(let i=0;i<dateStr.length;i++){ h = (h*31 + dateStr.charCodeAt(i)) >>> 0; }
+      return h % FOODS.length;
+    }
+
+    // Nice diff feedback per field
+    function hintText(guess, actual){
+      const d = Math.abs(guess - actual);
+      if (d <= 3) return "✓ very close";
+      if (d <= 10) return "close";
+      return guess > actual ? "too high" : "too low";
+    }
+
+    // === STATE ===
+    const maxTries = 5;
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth()+1).padStart(2,'0');
+    const dd = String(today.getDate()).padStart(2,'0');
+    const todayKey = `${yyyy}-${mm}-${dd}`;
+
+    // Prevent “going ahead”: use today only (local time). No future navigation UI provided.
+
+    // Pick today’s food deterministically
+    const pick = FOODS[dailyIndex(todayKey)];
+
+    // Restore progress for the day
+    const saveKey = `foodle:${todayKey}`;
+    const saved = JSON.parse(localStorage.getItem(saveKey) || 'null');
+
+    // === DOM HOOKS ===
+    const qs = s=>document.querySelector(s);
+    const dateTag = qs('#dateTag');
+    const foodName = qs('#foodName');
+    const serving = qs('#serving');
+    const yearEl = qs('#year');
+    const form = qs('#guessForm');
+    const statusBar = qs('#status');
+    const statusText = qs('#statusText');
+    const submitBtn = qs('#submitBtn');
+    const result = qs('#result');
+
+    const rcal = qs('#rcal'), rpro = qs('#rpro'), rcarb = qs('#rcarb'), rfat = qs('#rfat');
+    const coachTip = qs('#coachTip');
+
+    // Init UI
+    dateTag.textContent = new Date(todayKey + 'T00:00:00').toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+    yearEl.textContent = yyyy;
+    foodName.textContent = pick.name;
+    serving.textContent = pick.serving;
+
+    let tries = saved?.tries ?? 0;
+    let finished = saved?.finished ?? false;
+
+    function setStatus(type, msg){
+      statusBar.style.display = 'flex';
+      statusBar.className = 'status ' + (type||'');
+      statusText.textContent = msg;
+    }
+
+    function persist(){
+      localStorage.setItem(saveKey, JSON.stringify({ tries, finished }));
+    }
+
+    function revealAnswer(){
+      result.style.display = 'block';
+      rcal.textContent = pick.cal + ' kcal';
+      rpro.textContent = pick.pro + ' g';
+      rcarb.textContent = pick.carb + ' g';
+      rfat.textContent = pick.fat + ' g';
+      coachTip.textContent = pick.tip;
+      submitBtn.disabled = true;
+    }
+
+    if(finished){
+      setStatus('success', 'You already played today. Come back tomorrow for a new food!');
+      revealAnswer();
+    } else if(tries>0){
+      setStatus('', `Welcome back—${maxTries-tries} ${maxTries-tries===1?'try':'tries'} left today.`);
+    }
+
+    form.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      if (finished) return;
+
+      const data = new FormData(form);
+      const cal = Number(data.get('cal'));
+      const pro = Number(data.get('pro'));
+      const carb = Number(data.get('carb'));
+      const fat = Number(data.get('fat'));
+
+      if([cal,pro,carb,fat].some(n=>!isFinite(n) || n<0)){
+        setStatus('error','Please enter non‑negative numbers for all fields.');
+        return;
       }
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
+
+      // Validate bounds to cut down on typos
+      if(cal>1500 || pro>150 || carb>200 || fat>150){
+        setStatus('warn','Those numbers look high—double‑check your entries.');
+      } else {
+        statusBar.style.display='none';
       }
-      return a;
-    }
-    function formatShareGrid(guesses) {
-      return guesses.map(g => g.correct ? "🟩🟩🟩🟩" : "🟥🟥🟥🟥").join("\n");
-    }
-    function getDayIndex() {
-      // rotate from Jan 1, 2025
-      const now = new Date();
-      const start = new Date(2025, 0, 1);
-      const diffDays = Math.floor((now - start) / 86400000);
-      return ((diffDays % PUZZLES.length) + PUZZLES.length) % PUZZLES.length;
-    }
-    function flattenPuzzle(puzzle) {
-      const tiles = [];
-      puzzle.categories.forEach((cat, ci) => {
-        cat.items.forEach((item, ii) => {
-          tiles.push({ id: `${ci}-${ii}`, text: item.text, categoryIndex: ci });
-        });
+
+      tries = clamp(tries+1, 0, maxTries);
+      persist();
+
+      // Feedback
+      const feedback = [
+        `Calories: ${hintText(cal, pick.cal)}`,
+        `Protein: ${hintText(pro, pick.pro)}`,
+        `Carbs: ${hintText(carb, pick.carb)}`,
+        `Fat: ${hintText(fat, pick.fat)}`,
+      ].join('  •  ');
+
+      // Check win (within tolerances)
+      const ok = Math.abs(cal-pick.cal)<=10 && Math.abs(pro-pick.pro)<=2 && Math.abs(carb-pick.carb)<=4 && Math.abs(fat-pick.fat)<=2;
+
+      if(ok){
+        setStatus('success', 'Nice! Nailed it. '+feedback);
+        finished = true; persist();
+        revealAnswer();
+      } else if(tries >= maxTries){
+        setStatus('error', 'Out of tries. Here’s the answer.');
+        finished = true; persist();
+        revealAnswer();
+      } else {
+        setStatus('', `${maxTries-tries} ${maxTries-tries===1?'try':'tries'} left — ${feedback}`);
+      }
+
+      form.reset();
+      // return focus to first input for speedy mobile play
+      form.querySelector('input[name="cal"]').focus();
+    });
+
+    // Accessibility: allow Enter to jump fields on mobile
+    Array.from(form.querySelectorAll('input')).forEach((el, idx, arr)=>{
+      el.addEventListener('keydown', (ev)=>{
+        if(ev.key==='Enter'){
+          ev.preventDefault();
+          (arr[idx+1]||submitBtn).focus();
+        }
       });
-      return tiles;
-    }
-
-    // ----- Streak + date helpers -----
-    const LS_KEYS = {
-      lastPlayed: "foodle:lastPlayedISO",
-      streak: "foodle:streak",
-      best: "foodle:bestStreak",
-      practice: "foodle:practiceMode",
-      seenHelp: "foodle:seenHelp",
-    };
-    function isoDate(d = new Date()) {
-      const dt = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-      const y = dt.getFullYear();
-      const m = String(dt.getMonth()+1).padStart(2,"0");
-      const da = String(dt.getDate()).padStart(2,"0");
-      return `${y}-${m}-${da}`;
-    }
-    function daysBetweenISO(a, b) {
-      const ad = new Date(a), bd = new Date(b);
-      const A = new Date(ad.getFullYear(), ad.getMonth(), ad.getDate());
-      const B = new Date(bd.getFullYear(), bd.getMonth(), bd.getDate());
-      return Math.round((B - A) / 86400000);
-    }
-
-    // ---------------- Puzzle Data (Original 30) ----------------
-    const PUZZLES = [
-      {
-        id: "day-1",
-        title: "Protein, Vitamin C, Fats, Ultra-Processed",
-        categories: [
-          { name: "High-Protein Plant Foods", explanation: "Plants that pack ≥10g protein per 100g serving.", items: [ {text:"Lentils"},{text:"Tofu"},{text:"Tempeh"},{text:"Edamame"} ] },
-          { name: "High in Vitamin C", explanation: "Naturally rich sources that help immunity and collagen.", items: [ {text:"Bell Pepper"},{text:"Kiwi"},{text:"Orange"},{text:"Broccoli"} ] },
-          { name: "Healthy Fats", explanation: "Whole-food fats with fiber or heart-healthy lipids.", items: [ {text:"Avocado"},{text:"Almonds"},{text:"Olive Oil"},{text:"Chia Seeds"} ] },
-          { name: "Ultra-Processed Snacks", explanation: "Energy-dense, low-satiety items—good to limit.", items: [ {text:"Potato Chips"},{text:"Soda"},{text:"Candy Bar"},{text:"Donut"} ] },
-        ],
-      },
-      {
-        id: "day-2",
-        title: "Pre/Post Workout & Hydration",
-        categories: [
-          { name: "Great Pre-Workout Carbs", explanation: "Quick-to-digest carbs for energy before training.", items: [ {text:"Banana"},{text:"Rice Cakes"},{text:"Oats"},{text:"Dried Mango"} ] },
-          { name: "High-Protein Dairy", explanation: "Dairy picks with solid protein per serving.", items: [ {text:"Greek Yogurt"},{text:"Cottage Cheese"},{text:"Skyr"},{text:"Fairlife Milk"} ] },
-          { name: "Hydration Boosters", explanation: "Fluids/electrolytes that help replace sweat losses.", items: [ {text:"Water"},{text:"Electrolyte Drink"},{text:"Coconut Water"},{text:"Broth"} ] },
-          { name: "Great Post-Workout Protein", explanation: "Protein options to kickstart recovery.", items: [ {text:"Whey Shake"},{text:"Eggs"},{text:"Chicken Breast"},{text:"Tuna"} ] },
-        ],
-      },
-      {
-        id: "day-3",
-        title: "Fiber & Mediterranean",
-        categories: [
-          { name: "High-Fiber Foods", explanation: "Foods with fiber to support gut health and satiety.", items: [ {text:"Black Beans"},{text:"Raspberries"},{text:"Pear"},{text:"Barley"} ] },
-          { name: "Mediterranean Staples", explanation: "Core foods in the Mediterranean pattern.", items: [ {text:"Olives"},{text:"Tomatoes"},{text:"Chickpeas"},{text:"Salmon"} ] },
-          { name: "Lean Proteins", explanation: "Protein-dense picks with relatively low fat.", items: [ {text:"Turkey Breast"},{text:"Cod"},{text:"Shrimp"},{text:"Egg Whites"} ] },
-          { name: "Sugary Breakfasts", explanation: "Common breakfast items high in added sugar.", items: [ {text:"Sugary Cereal"},{text:"Pastry"},{text:"Chocolate Milk"},{text:"Maple Syrup Pancakes"} ] },
-        ],
-      },
-      { id: "day-4", title: "Whole Grains, Fermented, Starchy vs. Non-Starchy", categories: [ { name: "Whole Grains", explanation: "Intact grains rich in fiber and micronutrients.", items: [ {text:"Quinoa"},{text:"Brown Rice"},{text:"Oats"},{text:"Farro"} ] }, { name: "Fermented Foods", explanation: "Foods containing live cultures or produced by fermentation.", items: [ {text:"Kefir"},{text:"Kimchi"},{text:"Sauerkraut"},{text:"Yogurt"} ] }, { name: "Starchy Vegetables", explanation: "Vegetables higher in starch/carbs.", items: [ {text:"Potato"},{text:"Corn"},{text:"Peas"},{text:"Butternut Squash"} ] }, { name: "Non-Starchy Vegetables", explanation: "Low-calorie vegetables great for volume.", items: [ {text:"Spinach"},{text:"Cucumber"},{text:"Zucchini"},{text:"Asparagus"} ] } ] },
-      { id: "day-5", title: "Omega-3s, Calcium, Caffeine, Added Sugar Drinks", categories: [ { name: "Omega-3 Rich Foods", explanation: "EPA/DHA or ALA sources supportive of heart health.", items: [ {text:"Salmon"},{text:"Sardines"},{text:"Walnuts"},{text:"Chia Seeds"} ] }, { name: "Calcium-Rich (Non-Dairy)", explanation: "Non-dairy sources with notable calcium.", items: [ {text:"Tofu (Calcium-Set)"},{text:"Kale"},{text:"Almonds"},{text:"Tahini"} ] }, { name: "Caffeine Sources", explanation: "Common foods/beverages containing caffeine.", items: [ {text:"Coffee"},{text:"Black Tea"},{text:"Energy Drink"},{text:"Dark Chocolate"} ] }, { name: "High Added Sugar Drinks", explanation: "Beverages with significant added sugar.", items: [ {text:"Regular Soda"},{text:"Sweet Tea"},{text:"Sports Drink"},{text:"Frappuccino"} ] } ] },
-      { id: "day-6", title: "Vitamin D, Iron (Heme vs Plant), Gluten-Free Carbs", categories: [ { name: "Vitamin D Sources", explanation: "Naturally occurring vitamin D foods.", items: [ {text:"Salmon"},{text:"Egg Yolks"},{text:"Mushrooms (UV)"},{text:"Fortified Milk"} ] }, { name: "Iron-Rich (Heme)", explanation: "Animal sources of iron with higher absorption.", items: [ {text:"Beef"},{text:"Chicken Liver"},{text:"Oysters"},{text:"Lamb"} ] }, { name: "Iron-Rich (Plant)", explanation: "Plant-based non-heme iron sources.", items: [ {text:"Spinach"},{text:"Lentils"},{text:"Pumpkin Seeds"},{text:"Tofu"} ] }, { name: "Naturally Gluten-Free Carbs", explanation: "Carb sources free of gluten naturally.", items: [ {text:"Rice"},{text:"Potato"},{text:"Corn"},{text:"Quinoa"} ] } ] },
-      { id: "day-7", title: "Low-Calorie Volume, Nut Butters, Lean Red Meats, Salty Snacks", categories: [ { name: "High-Volume, Low-Cal", explanation: "Filling picks with low energy density.", items: [ {text:"Popcorn (Air-Popped)"},{text:"Cabbage"},{text:"Strawberries"},{text:"Celery"} ] }, { name: "Nut & Seed Butters", explanation: "Calorie-dense spreads rich in fats.", items: [ {text:"Peanut Butter"},{text:"Almond Butter"},{text:"Tahini"},{text:"Sunflower Seed Butter"} ] }, { name: "Lean Red Meats", explanation: "Relatively lean cuts of red meat.", items: [ {text:"Sirloin"},{text:"Eye of Round"},{text:"Top Round"},{text:"Bison"} ] }, { name: "High-Sodium Snack Foods", explanation: "Packaged snacks typically high in sodium.", items: [ {text:"Pretzels"},{text:"Jerky"},{text:"Cheese Puffs"},{text:"Salted Nuts"} ] } ] },
-      { id: "day-8", title: "Recovery Carbs, Lactose-Free Dairy Alts, Bitter Greens, Fried Foods", categories: [ { name: "Recovery Carbs", explanation: "Good carb sources to replenish glycogen.", items: [ {text:"White Rice"},{text:"Bagel"},{text:"Pasta"},{text:"Potatoes"} ] }, { name: "Lactose-Free Dairy Alternatives", explanation: "Milk alternatives without lactose.", items: [ {text:"Almond Milk"},{text:"Oat Milk"},{text:"Coconut Milk"},{text:"Soy Milk"} ] }, { name: "Bitter Greens", explanation: "Leafy greens with a bitter profile.", items: [ {text:"Arugula"},{text:"Radicchio"},{text:"Dandelion Greens"},{text:"Watercress"} ] }, { name: "Fried Favorites", explanation: "Common deep-fried foods.", items: [ {text:"French Fries"},{text:"Fried Chicken"},{text:"Onion Rings"},{text:"Mozzarella Sticks"} ] } ] },
-      { id: "day-9", title: "Probiotics vs Prebiotics, Nightshades, Natural Sweeteners", categories: [ { name: "Probiotic Foods", explanation: "Contain live bacteria beneficial to gut.", items: [ {text:"Yogurt"},{text:"Kefir"},{text:"Kimchi"},{text:"Sauerkraut"} ] }, { name: "Prebiotic-Rich Foods", explanation: "Feed beneficial gut bacteria (fiber).", items: [ {text:"Garlic"},{text:"Onion"},{text:"Asparagus"},{text:"Banana (green)"} ] }, { name: "Nightshade Vegetables", explanation: "Members of the Solanaceae family.", items: [ {text:"Tomato"},{text:"Eggplant"},{text:"Bell Pepper"},{text:"Potato"} ] }, { name: "Natural Sweeteners", explanation: "Less refined sweetener options.", items: [ {text:"Honey"},{text:"Maple Syrup"},{text:"Dates"},{text:"Coconut Sugar"} ] } ] },
-      { id: "day-10", title: "Portable Proteins, Citrus, Cruciferous, Candy", categories: [ { name: "Portable Protein Snacks", explanation: "Easy protein on the go.", items: [ {text:"Protein Bar"},{text:"Jerky"},{text:"String Cheese"},{text:"Roasted Chickpeas"} ] }, { name: "Citrus Fruits", explanation: "Bright, vitamin C rich fruits.", items: [ {text:"Orange"},{text:"Grapefruit"},{text:"Lemon"},{text:"Lime"} ] }, { name: "Cruciferous Vegetables", explanation: "Brassica family health stars.", items: [ {text:"Broccoli"},{text:"Cauliflower"},{text:"Brussels Sprouts"},{text:"Kale"} ] }, { name: "Sugary Candies", explanation: "Primarily added sugar sweets.", items: [ {text:"Gummy Bears"},{text:"Lollipop"},{text:"Licorice"},{text:"Caramel"} ] } ] },
-      { id: "day-11", title: "Slow-Digesting Carbs, Shellfish, Nitrates, Bakery Treats", categories: [ { name: "Slow-Digesting Carbs", explanation: "Low glycemic, fiber-rich carbs.", items: [ {text:"Steel-Cut Oats"},{text:"Lentils"},{text:"Barley"},{text:"Sweet Potato"} ] }, { name: "Shellfish", explanation: "Seafood with shells.", items: [ {text:"Shrimp"},{text:"Crab"},{text:"Mussels"},{text:"Clams"} ] }, { name: "Nitrate-Rich Veg", explanation: "May support blood flow/performance.", items: [ {text:"Beetroot"},{text:"Spinach"},{text:"Romaine"},{text:"Arugula"} ] }, { name: "Bakery Treats", explanation: "Refined-flour, sugar-heavy items.", items: [ {text:"Donut"},{text:"Cupcake"},{text:"Danish"},{text:"Brownie"} ] } ] },
-      { id: "day-12", title: "Anti-Inflammatory Herbs/Spices, Deli Meats, Hydration Fruit, Granolas", categories: [ { name: "Anti-Inflammatory Spices", explanation: "Spices with studied anti-inflammatory potential.", items: [ {text:"Turmeric"},{text:"Ginger"},{text:"Garlic"},{text:"Cinnamon"} ] }, { name: "Processed Deli Meats", explanation: "Often higher in sodium/preservatives.", items: [ {text:"Bologna"},{text:"Salami"},{text:"Pepperoni"},{text:"Ham (processed)"} ] }, { name: "High-Water Fruits", explanation: "Fruits with high water content.", items: [ {text:"Watermelon"},{text:"Strawberries"},{text:"Cantaloupe"},{text:"Peach"} ] }, { name: "Granola/Cereal Mixes", explanation: "Often sweetened oat-based mixes.", items: [ {text:"Granola"},{text:"Muesli"},{text:"Trail Mix (sweetened)"},{text:"Honey Oat Clusters"} ] } ] },
-      { id: "day-13", title: "Complete Plant Proteins, Root Veg, Fast Food, Citrus Zest Uses", categories: [ { name: "Complete Plant Proteins", explanation: "Contain all essential amino acids.", items: [ {text:"Quinoa"},{text:"Soy"},{text:"Buckwheat"},{text:"Hemp Seeds"} ] }, { name: "Root Vegetables", explanation: "Edible plant roots.", items: [ {text:"Carrot"},{text:"Beet"},{text:"Turnip"},{text:"Parsnip"} ] }, { name: "Classic Fast Foods", explanation: "Common fast-food items.", items: [ {text:"Burger"},{text:"Fries"},{text:"Milkshake"},{text:"Chicken Nuggets"} ] }, { name: "Citrus Zest Uses", explanation: "Common fruits used for zest.", items: [ {text:"Orange"},{text:"Lemon"},{text:"Lime"},{text:"Grapefruit"} ] } ] },
-      { id: "day-14", title: "Electrolytes, Berries, Processed Breakfast Meats, Cooking Oils", categories: [ { name: "Electrolyte Sources", explanation: "Help maintain fluid balance.", items: [ {text:"Sodium"},{text:"Potassium"},{text:"Magnesium"},{text:"Calcium"} ] }, { name: "Berries", explanation: "Antioxidant-rich fruits.", items: [ {text:"Blueberries"},{text:"Raspberries"},{text:"Blackberries"},{text:"Strawberries"} ] }, { name: "Processed Breakfast Meats", explanation: "Common breakfast proteins, processed.", items: [ {text:"Bacon"},{text:"Sausage Links"},{text:"Scrapple"},{text:"Canadian Bacon"} ] }, { name: "Common Cooking Oils", explanation: "Oils used for cooking.", items: [ {text:"Olive Oil"},{text:"Avocado Oil"},{text:"Canola Oil"},{text:"Coconut Oil"} ] } ] },
-      { id: "day-15", title: "High-Fiber Fruits, White Fish, Low-Carb Veg, Sugary Spreads", categories: [ { name: "High-Fiber Fruits", explanation: "Fruit choices with notable fiber.", items: [ {text:"Raspberry"},{text:"Blackberry"},{text:"Pear (with skin)"},{text:"Apple (with skin)"} ] }, { name: "Lean White Fish", explanation: "Very lean seafood proteins.", items: [ {text:"Cod"},{text:"Haddock"},{text:"Tilapia"},{text:"Pollock"} ] }, { name: "Very Low-Carb Veg", explanation: "Go-to veg for low-carb plates.", items: [ {text:"Lettuce"},{text:"Cucumber"},{text:"Mushrooms"},{text:"Broccoli Rabe"} ] }, { name: "Sugary Spreads", explanation: "High-sugar toast toppings.", items: [ {text:"Jam"},{text:"Honey"},{text:"Chocolate Spread"},{text:"Marshmallow Fluff"} ] } ] },
-      { id: "day-16", title: "Legumes, Citrus Alternatives, Smoked Foods, Hydrating Veg", categories: [ { name: "Legumes", explanation: "Beans, peas, lentils.", items: [ {text:"Chickpeas"},{text:"Kidney Beans"},{text:"Black Beans"},{text:"Lentils"} ] }, { name: "Acid/Tart Alternatives", explanation: "Common acidic/tart flavor sources.", items: [ {text:"Vinegar"},{text:"Yogurt"},{text:"Tomato"},{text:"Tamarind"} ] }, { name: "Smoked Foods", explanation: "Prepared with smoke.", items: [ {text:"Smoked Salmon"},{text:"Smoked Turkey"},{text:"Smoked Cheese"},{text:"Smoked Paprika"} ] }, { name: "Hydrating Vegetables", explanation: "Veg with high water content.", items: [ {text:"Cucumber"},{text:"Lettuce"},{text:"Tomato"},{text:"Celery"} ] } ] },
-      { id: "day-17", title: "Meal-Prep Proteins, Tropical Fruits, Seeds, Sugary Cereals", categories: [ { name: "Meal-Prep Friendly Proteins", explanation: "Hold up well for batch cooking.", items: [ {text:"Chicken Thighs"},{text:"Turkey Meatballs"},{text:"Tofu"},{text:"Tempeh"} ] }, { name: "Tropical Fruits", explanation: "Warm-climate, sweet fruits.", items: [ {text:"Mango"},{text:"Pineapple"},{text:"Papaya"},{text:"Banana"} ] }, { name: "Edible Seeds", explanation: "Nutrient-dense seed foods.", items: [ {text:"Pumpkin Seeds"},{text:"Sesame Seeds"},{text:"Flaxseeds"},{text:"Sunflower Seeds"} ] }, { name: "Sugary Breakfast Cereals", explanation: "Cereals high in added sugars.", items: [ {text:"Frosted Flakes"},{text:"Cocoa Puffs"},{text:"Lucky Charms"},{text:"Fruity Pebbles"} ] } ] },
-      { id: "day-18", title: "Hearty Salads, Game Meats, Nut Milks, Dips", categories: [ { name: "Hearty Salad Add-Ins", explanation: "Boost satiety/nutrition in salads.", items: [ {text:"Chickpeas"},{text:"Avocado"},{text:"Grilled Chicken"},{text:"Quinoa"} ] }, { name: "Game Meats", explanation: "Wild or farmed game.", items: [ {text:"Venison"},{text:"Bison"},{text:"Duck"},{text:"Rabbit"} ] }, { name: "Nut/Seed Milks", explanation: "Plant milks from nuts/seeds.", items: [ {text:"Almond Milk"},{text:"Cashew Milk"},{text:"Hemp Milk"},{text:"Flax Milk"} ] }, { name: "Common Dips", explanation: "Popular party dips.", items: [ {text:"Hummus"},{text:"Guacamole"},{text:"Salsa"},{text:"Spinach Dip"} ] } ] },
-      { id: "day-19", title: "High-Protein Breakfasts, Citrus-Adjacent, Whole Fruit vs Juice, Bars", categories: [ { name: "High-Protein Breakfast Picks", explanation: "Breakfasts with strong protein.", items: [ {text:"Eggs"},{text:"Greek Yogurt"},{text:"Cottage Cheese"},{text:"Protein Pancakes"} ] }, { name: "Citrus-Adjacent Fruits", explanation: "Fruits often used similarly to citrus.", items: [ {text:"Pineapple"},{text:"Kiwi"},{text:"Pomegranate"},{text:"Passion Fruit"} ] }, { name: "Whole Fruit vs Juice (Whole)", explanation: "Whole fruit better for satiety.", items: [ {text:"Orange (whole)"},{text:"Apple (whole)"},{text:"Grapes (whole)"},{text:"Pineapple Chunks"} ] }, { name: "Snack Bars (Sweet)", explanation: "Bar-format sweet snacks.", items: [ {text:"Granola Bar"},{text:"Cereal Bar"},{text:"Rice Crispy Treat"},{text:"Chocolate Protein Bar (sweet)"} ] } ] },
-      { id: "day-20", title: "Low-FODMAP Examples, Citrus Oils, Pickled Foods, Processed Cheese", categories: [ { name: "Lower-FODMAP Examples", explanation: "Often tolerated in FODMAP-sensitive diets.", items: [ {text:"Zucchini"},{text:"Carrots"},{text:"Strawberries"},{text:"White Rice"} ] }, { name: "Citrus Oils/Extracts", explanation: "Flavorings derived from citrus.", items: [ {text:"Orange Oil"},{text:"Lemon Extract"},{text:"Lime Zest"},{text:"Yuzu Juice"} ] }, { name: "Pickled Foods", explanation: "Brined and acid-preserved.", items: [ {text:"Pickles"},{text:"Pickled Onions"},{text:"Pickled Beets"},{text:"Pickled Jalapeños"} ] }, { name: "Processed Cheese Items", explanation: "Cheeses with added ingredients.", items: [ {text:"American Cheese"},{text:"Cheese Spread"},{text:"String Cheese (processed)"},{text:"Cheese Singles"} ] } ] },
-      { id: "day-21", title: "Carb+Protein Snacks, Stone Fruits, Brassicas, Ice Cream Types", categories: [ { name: "Carb+Protein Snacks", explanation: "Balanced snack combos.", items: [ {text:"Apple + Peanut Butter"},{text:"Yogurt + Granola"},{text:"Crackers + Turkey"},{text:"Banana + Whey"} ] }, { name: "Stone Fruits", explanation: "Fruits with pits.", items: [ {text:"Peach"},{text:"Plum"},{text:"Cherry"},{text:"Apricot"} ] }, { name: "Brassica Family", explanation: "Cruciferous members.", items: [ {text:"Kale"},{text:"Bok Choy"},{text:"Collard Greens"},{text:"Cabbage"} ] }, { name: "Ice Cream Varieties", explanation: "Popular ice cream styles.", items: [ {text:"Gelato"},{text:"Soft Serve"},{text:"Frozen Yogurt"},{text:"Ice Cream"} ] } ] },
-      { id: "day-22", title: "Herbal Teas, Organ Meats, Whole Grain Breads, Sugary Coffee Drinks", categories: [ { name: "Herbal/Non-Caffeinated Teas", explanation: "Naturally caffeine-free.", items: [ {text:"Chamomile"},{text:"Peppermint"},{text:"Rooibos"},{text:"Hibiscus"} ] }, { name: "Organ Meats", explanation: "Nutrient-dense animal organs.", items: [ {text:"Liver"},{text:"Heart"},{text:"Kidney"},{text:"Tripe"} ] }, { name: "Whole Grain Breads", explanation: "Bread with whole grains.", items: [ {text:"100% Whole Wheat"},{text:"Sprouted Grain"},{text:"Rye (whole)"} ,{text:"Ezekiel Bread"} ] }, { name: "Sugary Coffee Drinks", explanation: "Coffee beverages high in sugar.", items: [ {text:"Mocha"},{text:"Caramel Latte"},{text:"Frappé"},{text:"Iced Vanilla Latte (sweetened)"} ] } ] },
-      { id: "day-23", title: "Vitamin A Sources, Lean Deli Meats, Sports Drinks vs Water, Pseudocereals", categories: [ { name: "Vitamin A/Beta-Carotene", explanation: "Great sources of vitamin A precursors.", items: [ {text:"Carrot"},{text:"Sweet Potato"},{text:"Butternut Squash"},{text:"Mango"} ] }, { name: "Leaner Deli Meats", explanation: "Lower-fat deli options.", items: [ {text:"Turkey Breast"},{text:"Chicken Breast Deli"},{text:"Roast Beef (lean)"} ,{text:"Ham (lean)"} ] }, { name: "When Water Wins", explanation: "Hydration case where water suffices.", items: [ {text:"Light Walk"},{text:"Desk Day"},{text:"Short Yoga"},{text:"Casual Bike"} ] }, { name: "Pseudocereals", explanation: "Seed foods used like grains.", items: [ {text:"Quinoa"},{text:"Buckwheat"},{text:"Amaranth"},{text:"Chia"} ] } ] },
-      { id: "day-24", title: "Low-Carb Fruits, High-GI Carbs, Cured Fish, Dessert Sauces", categories: [ { name: "Lower-Sugar Fruits", explanation: "Fruits with relatively lower sugar.", items: [ {text:"Berries"},{text:"Kiwi"},{text:"Grapefruit"},{text:"Cantaloupe"} ] }, { name: "High-GI Carb Sources", explanation: "Fast-digesting carbs.", items: [ {text:"White Bread"},{text:"Glucose Gel"},{text:"Instant Rice"},{text:"Cornflakes"} ] }, { name: "Cured Fish Items", explanation: "Salt-cured or brined fish.", items: [ {text:"Lox"},{text:"Anchovies"},{text:"Bacalao"},{text:"Pickled Herring"} ] }, { name: "Dessert Sauces", explanation: "Sweet toppings/sauces.", items: [ {text:"Chocolate Syrup"},{text:"Caramel Sauce"},{text:"Strawberry Sauce"},{text:"Butterscotch"} ] } ] },
-      { id: "day-25", title: "High-Protein Plant Pairings, Mushrooms, Citrus Sodas, Trail Snacks", categories: [ { name: "Classic Plant Pairings", explanation: "Combos that improve amino acid profile.", items: [ {text:"Rice + Beans"},{text:"Peanut Butter + Bread"},{text:"Hummus + Pita"},{text:"Tofu + Rice"} ] }, { name: "Edible Mushrooms", explanation: "Common culinary mushrooms.", items: [ {text:"Button"},{text:"Portobello"},{text:"Shiitake"},{text:"Oyster"} ] }, { name: "Citrus-Flavored Sodas", explanation: "Popular citrus sodas.", items: [ {text:"Lemon-Lime Soda"},{text:"Orange Soda"},{text:"Grapefruit Soda"},{text:"Mountain Dew"} ] }, { name: "Trail Snacks", explanation: "Portable energy-dense snacks.", items: [ {text:"Trail Mix"},{text:"Energy Bar"},{text:"Dried Fruit"},{text:"Peanut Butter Pack"} ] } ] },
-      { id: "day-26", title: "High-Satiety Proteins, Spicy Peppers, Refined White Carbs, Frozen Treats", categories: [ { name: "High-Satiety Proteins", explanation: "Proteins that keep you full.", items: [ {text:"Chicken Breast"},{text:"Greek Yogurt"},{text:"Cottage Cheese"},{text:"Eggs"} ] }, { name: "Spicy Peppers", explanation: "Chili peppers with heat.", items: [ {text:"Jalapeño"},{text:"Serrano"},{text:"Habanero"},{text:"Thai Chili"} ] }, { name: "Refined White Carbs", explanation: "Lower fiber, quick carbs.", items: [ {text:"White Pasta"},{text:"White Bread"},{text:"White Rice"},{text:"Crackers"} ] }, { name: "Frozen Desserts", explanation: "Sweet frozen treats.", items: [ {text:"Popsicle"},{text:"Sorbet"},{text:"Ice Cream Bar"},{text:"Frozen Yogurt"} ] } ] },
-      { id: "day-27", title: "Marinades/Acids, High-Fat Meats, Leafy Greens, Energy Shots", categories: [ { name: "Acidic Marinade Items", explanation: "Common acids in marinades.", items: [ {text:"Lemon Juice"},{text:"Lime Juice"},{text:"Vinegar"},{text:"Yogurt"} ] }, { name: "Higher-Fat Meats", explanation: "Cuts with higher fat content.", items: [ {text:"Pork Belly"},{text:"Ribeye"},{text:"Duck"},{text:"Sausage"} ] }, { name: "Leafy Greens", explanation: "Green leafy vegetables.", items: [ {text:"Spinach"},{text:"Romaine"},{text:"Kale"},{text:"Swiss Chard"} ] }, { name: "Energy Shot Items", explanation: "Quick-caffeine products.", items: [ {text:"Caffeine Shot"},{text:"5-Hour Energy"},{text:"Pre-Workout Shot"},{text:"Espresso Shot"} ] } ] },
-      { id: "day-28", title: "Beans vs Peas, Sea Vegetables, Low-Cal Sweeteners, BBQ Foods", categories: [ { name: "Beans (Not Peas)", explanation: "Common beans category.", items: [ {text:"Black Beans"},{text:"Pinto Beans"},{text:"Kidney Beans"},{text:"Navy Beans"} ] }, { name: "Sea Vegetables", explanation: "Edible seaweeds.", items: [ {text:"Nori"},{text:"Wakame"},{text:"Kombu"},{text:"Dulse"} ] }, { name: "Low/No-Cal Sweeteners", explanation: "Intense sweeteners with little/no calories.", items: [ {text:"Stevia"},{text:"Sucralose"},{text:"Ace-K"},{text:"Aspartame"} ] }, { name: "BBQ Classics", explanation: "Typical barbecue foods.", items: [ {text:"Ribs"},{text:"Pulled Pork"},{text:"Brisket"},{text:"Cornbread"} ] } ] },
-      { id: "day-29", title: "Vitamin C Veg, Dried Fruit, Yogurt Types, Breads", categories: [ { name: "Vitamin C Heavy Veg", explanation: "Vegetables especially high in vitamin C.", items: [ {text:"Red Bell Pepper"},{text:"Broccoli"},{text:"Brussels Sprouts"},{text:"Kale"} ] }, { name: "Common Dried Fruits", explanation: "Dehydrated fruit snacks.", items: [ {text:"Raisins"},{text:"Dates"},{text:"Apricots"},{text:"Cranberries (sweetened)"} ] }, { name: "Yogurt Styles", explanation: "Popular yogurt preparations.", items: [ {text:"Greek"},{text:"Skyr"},{text:"Regular"},{text:"Kefir"} ] }, { name: "Bread Varieties", explanation: "Popular bread types.", items: [ {text:"Sourdough"},{text:"Baguette"},{text:"Pita"},{text:"Ciabatta"} ] } ] },
-      { id: "day-30", title: "High-Protein Plant Snacks, Citrus Desserts, Root Starches, Party Foods", categories: [ { name: "Plant-Based Protein Snacks", explanation: "Grab-and-go plant proteins.", items: [ {text:"Roasted Edamame"},{text:"Tofu Bites"},{text:"Roasted Chickpeas"},{text:"Lupini Beans"} ] }, { name: "Citrus Desserts", explanation: "Desserts featuring citrus.", items: [ {text:"Lemon Bar"},{text:"Key Lime Pie"},{text:"Orange Sorbet"},{text:"Citrus Tart"} ] }, { name: "Root Starches", explanation: "Starchy roots/tubers.", items: [ {text:"Cassava"},{text:"Taro"},{text:"Yam"},{text:"Sweet Potato"} ] }, { name: "Common Party Foods", explanation: "Crowd-pleasing party bites.", items: [ {text:"Pizza"},{text:"Wings"},{text:"Pigs in a Blanket"},{text:"Spinach Artichoke Dip"} ] } ] },
-    ];
-
-    // ---------------- Extra Month: September 2025 ----------------
-    const MORE_PUZZLES_SEPT_2025 = [
-      { id: "sep-2025-01", title: "Lean Proteins, Complex Carbs, Hydrating Fruits, Sugary Treats", categories: [
-        { name: "Lean Proteins", explanation: "High protein, low fat.", items: [{text:"Chicken Breast"},{text:"Cod"},{text:"Egg Whites"},{text:"Turkey Breast"}] },
-        { name: "Complex Carb Staples", explanation: "Slower-digesting carb bases.", items: [{text:"Brown Rice"},{text:"Quinoa"},{text:"Farro"},{text:"Oats"}] },
-        { name: "Hydrating Fruits", explanation: "High water content.", items: [{text:"Watermelon"},{text:"Cantaloupe"},{text:"Orange"},{text:"Grapes"}] },
-        { name: "Sugary Treats", explanation: "High added sugar foods.", items: [{text:"Candy Bar"},{text:"Donut"},{text:"Cupcake"},{text:"Gummy Bears"}] },
-      ]},
-      { id: "sep-2025-02", title: "Plant Proteins, Leafy Greens, Breakfast Carbs, Fried Foods", categories: [
-        { name: "Plant Proteins", explanation: "Protein from plants.", items: [{text:"Tofu"},{text:"Tempeh"},{text:"Lentils"},{text:"Edamame"}] },
-        { name: "Leafy Greens", explanation: "Low-calorie, nutrient-dense.", items: [{text:"Spinach"},{text:"Kale"},{text:"Romaine"},{text:"Swiss Chard"}] },
-        { name: "Breakfast Carbs", explanation: "Common morning carb picks.", items: [{text:"Bagel"},{text:"Oats"},{text:"Whole Wheat Toast"},{text:"English Muffin"}] },
-        { name: "Fried Favorites", explanation: "Deep-fried items.", items: [{text:"French Fries"},{text:"Fried Chicken"},{text:"Onion Rings"},{text:"Mozzarella Sticks"}] },
-      ]},
-      { id: "sep-2025-03", title: "Mediterranean Staples, High-Fiber Fruits, Dairy Protein, Candy Drinks", categories: [
-        { name: "Mediterranean Staples", explanation: "Core Med-style foods.", items: [{text:"Olives"},{text:"Chickpeas"},{text:"Tomatoes"},{text:"Olive Oil"}] },
-        { name: "High-Fiber Fruits", explanation: "Fruits rich in fiber.", items: [{text:"Raspberries"},{text:"Blackberries"},{text:"Pear (skin)"},{text:"Apple (skin)"}] },
-        { name: "High-Protein Dairy", explanation: "Dairy with solid protein.", items: [{text:"Greek Yogurt"},{text:"Cottage Cheese"},{text:"Skyr"},{text:"Fairlife Milk"}] },
-        { name: "Candy-Like Drinks", explanation: "Sugary beverages.", items: [{text:"Regular Soda"},{text:"Sweet Tea"},{text:"Frappuccino"},{text:"Energy Drink (sweet)"}] },
-      ]},
-      { id: "sep-2025-04", title: "Fermented Foods, Root Veg, Portable Proteins, Refined Carbs", categories: [
-        { name: "Fermented Foods", explanation: "Contain live cultures.", items: [{text:"Yogurt"},{text:"Kefir"},{text:"Kimchi"},{text:"Sauerkraut"}] },
-        { name: "Root Vegetables", explanation: "Edible plant roots.", items: [{text:"Carrot"},{text:"Beet"},{text:"Turnip"},{text:"Parsnip"}] },
-        { name: "Portable Proteins", explanation: "Grab-and-go protein.", items: [{text:"Jerky"},{text:"Protein Bar"},{text:"String Cheese"},{text:"Roasted Chickpeas"}] },
-        { name: "Refined White Carbs", explanation: "Lower fiber staples.", items: [{text:"White Bread"},{text:"White Rice"},{text:"White Pasta"},{text:"Crackers"}] },
-      ]},
-      { id: "sep-2025-05", title: "Vitamin C, Omega-3s, Non-Starchy Veg, Bakery Sweets", categories: [
-        { name: "Vitamin C Heroes", explanation: "Top C sources.", items: [{text:"Bell Pepper"},{text:"Kiwi"},{text:"Orange"},{text:"Broccoli"}] },
-        { name: "Omega-3 Rich", explanation: "EPA/DHA or ALA sources.", items: [{text:"Salmon"},{text:"Sardines"},{text:"Chia Seeds"},{text:"Walnuts"}] },
-        { name: "Non-Starchy Veg", explanation: "Low-cal volume veg.", items: [{text:"Cucumber"},{text:"Zucchini"},{text:"Asparagus"},{text:"Tomato"}] },
-        { name: "Bakery Sweets", explanation: "Sugar/flour dense.", items: [{text:"Brownie"},{text:"Danish"},{text:"Donut"},{text:"Croissant (sweet)"}] },
-      ]},
-      { id: "sep-2025-06", title: "High-Satiety Proteins, Low-GI Carbs, Citrus, Sugary Cereals", categories: [
-        { name: "High-Satiety Proteins", explanation: "Keep you fuller longer.", items: [{text:"Eggs"},{text:"Chicken Breast"},{text:"Greek Yogurt"},{text:"Cottage Cheese"}] },
-        { name: "Lower-GI Carbs", explanation: "Slower glucose rise.", items: [{text:"Steel-Cut Oats"},{text:"Barley"},{text:"Lentils"},{text:"Sweet Potato"}] },
-        { name: "Citrus Fruits", explanation: "Zesty C-rich fruit.", items: [{text:"Lemon"},{text:"Lime"},{text:"Grapefruit"},{text:"Orange"}] },
-        { name: "Sugary Breakfast Cereals", explanation: "High added sugar.", items: [{text:"Frosted Flakes"},{text:"Cocoa Puffs"},{text:"Lucky Charms"},{text:"Fruity Pebbles"}] },
-      ]},
-      { id: "sep-2025-07", title: "Complete Plant Proteins, Starchy Veg, Herbal Teas, Fast Food", categories: [
-        { name: "Complete Plant Proteins", explanation: "All essential AAs.", items: [{text:"Quinoa"},{text:"Soy"},{text:"Buckwheat"},{text:"Hemp Seeds"}] },
-        { name: "Starchy Vegetables", explanation: "Higher carb veg.", items: [{text:"Corn"},{text:"Peas"},{text:"Potato"},{text:"Butternut Squash"}] },
-        { name: "Herbal Teas (No Caffeine)", explanation: "Naturally caffeine-free.", items: [{text:"Chamomile"},{text:"Peppermint"},{text:"Rooibos"},{text:"Hibiscus"}] },
-        { name: "Classic Fast Foods", explanation: "Fried/fast staples.", items: [{text:"Burger"},{text:"Fries"},{text:"Milkshake"},{text:"Chicken Nuggets"}] },
-      ]},
-      { id: "sep-2025-08", title: "Probiotic vs Prebiotic, White Fish, Dessert Sauces, Hydration", categories: [
-        { name: "Probiotic Foods", explanation: "Contain live cultures.", items: [{text:"Yogurt"},{text:"Kefir"},{text:"Kimchi"},{text:"Sauerkraut"}] },
-        { name: "Prebiotic-Rich Foods", explanation: "Feed gut bacteria.", items: [{text:"Garlic"},{text:"Onion"},{text:"Asparagus"},{text:"Banana (green)"}] },
-        { name: "Lean White Fish", explanation: "Very lean protein.", items: [{text:"Cod"},{text:"Haddock"},{text:"Tilapia"},{text:"Pollock"}] },
-        { name: "Dessert Sauces", explanation: "Sweet toppings.", items: [{text:"Chocolate Syrup"},{text:"Caramel Sauce"},{text:"Strawberry Sauce"},{text:"Butterscotch"}] },
-      ]},
-      { id: "sep-2025-09", title: "Whole Grains, Seeds, Bitter Greens, Sweet Coffee Drinks", categories: [
-        { name: "Whole Grains", explanation: "Intact/whole kernels.", items: [{text:"Oats"},{text:"Farro"},{text:"Brown Rice"},{text:"Rye (whole)"}] },
-        { name: "Edible Seeds", explanation: "Nutrient-dense seeds.", items: [{text:"Pumpkin Seeds"},{text:"Flaxseeds"},{text:"Sesame Seeds"},{text:"Sunflower Seeds"}] },
-        { name: "Bitter Greens", explanation: "Distinct bitter notes.", items: [{text:"Arugula"},{text:"Radicchio"},{text:"Dandelion Greens"},{text:"Watercress"}] },
-        { name: "Sugary Coffee Drinks", explanation: "Sweet, calorie-dense.", items: [{text:"Mocha"},{text:"Caramel Latte"},{text:"Frappé"},{text:"Iced Vanilla Latte (sweetened)"}] },
-      ]},
-      { id: "sep-2025-10", title: "Meal-Prep Proteins, Stone Fruits, Gluten-Free Carbs, Candy", categories: [
-        { name: "Meal-Prep Friendly Proteins", explanation: "Hold up well prepped.", items: [{text:"Chicken Thighs"},{text:"Turkey Meatballs"},{text:"Tofu"},{text:"Tempeh"}] },
-        { name: "Stone Fruits", explanation: "Fruits with pits.", items: [{text:"Peach"},{text:"Plum"},{text:"Cherry"},{text:"Apricot"}] },
-        { name: "Naturally GF Carbs", explanation: "Gluten-free by nature.", items: [{text:"Rice"},{text:"Potato"},{text:"Corn"},{text:"Quinoa"}] },
-        { name: "Sugary Candies", explanation: "Added-sugar sweets.", items: [{text:"Lollipop"},{text:"Licorice"},{text:"Caramel"},{text:"Gummy Bears"}] },
-      ]},
-      { id: "sep-2025-11", title: "Cruciferous Veg, Hearty Salad Add‑Ins, Nut Milks, Processed Meats", categories: [
-        { name: "Cruciferous Vegetables", explanation: "Brassica family.", items: [{text:"Broccoli"},{text:"Cauliflower"},{text:"Brussels Sprouts"},{text:"Kale"}] },
-        { name: "Hearty Salad Add‑Ins", explanation: "Boost satiety.", items: [{text:"Chickpeas"},{text:"Avocado"},{text:"Grilled Chicken"},{text:"Quinoa"}] },
-        { name: "Nut/Seed Milks", explanation: "Dairy alternatives.", items: [{text:"Almond Milk"},{text:"Cashew Milk"},{text:"Hemp Milk"},{text:"Flax Milk"}] },
-        { name: "Processed Deli Meats", explanation: "Often higher sodium.", items: [{text:"Bologna"},{text:"Salami"},{text:"Pepperoni"},{text:"Ham (processed)"}] },
-      ]},
-      { id: "sep-2025-12", title: "Electrolytes, High-Water Fruits, Shellfish, Bars", categories: [
-        { name: "Electrolyte Minerals", explanation: "Fluid balance roles.", items: [{text:"Sodium"},{text:"Potassium"},{text:"Magnesium"},{text:"Calcium"}] },
-        { name: "High‑Water Fruits", explanation: "Hydrating picks.", items: [{text:"Watermelon"},{text:"Strawberries"},{text:"Cantaloupe"},{text:"Peach"}] },
-        { name: "Shellfish", explanation: "Seafood with shells.", items: [{text:"Shrimp"},{text:"Crab"},{text:"Mussels"},{text:"Clams"}] },
-        { name: "Snack Bars (Sweet)", explanation: "Bar-format sweets.", items: [{text:"Granola Bar"},{text:"Cereal Bar"},{text:"Rice Crispy Treat"},{text:"Chocolate Protein Bar (sweet)"}] },
-      ]},
-      { id: "sep-2025-13", title: "Vitamin D Sources, Iron Heme vs Plant, Bitter Add‑Ins, Sodas", categories: [
-        { name: "Vitamin D Sources", explanation: "Natural or fortified.", items: [{text:"Salmon"},{text:"Egg Yolks"},{text:"Mushrooms (UV)"},{text:"Fortified Milk"}] },
-        { name: "Iron‑Rich (Heme)", explanation: "Higher absorption.", items: [{text:"Beef"},{text:"Chicken Liver"},{text:"Oysters"},{text:"Lamb"}] },
-        { name: "Iron‑Rich (Plant)", explanation: "Non‑heme sources.", items: [{text:"Spinach"},{text:"Lentils"},{text:"Pumpkin Seeds"},{text:"Tofu"}] },
-        { name: "Sugary Sodas", explanation: "Sweetened soft drinks.", items: [{text:"Cola"},{text:"Root Beer"},{text:"Ginger Ale (sweet)"},{text:"Orange Soda"}] },
-      ]},
-      { id: "sep-2025-14", title: "Hearty Breakfasts, Citrus Adjacent, Nitrate Veg, Frozen Treats", categories: [
-        { name: "High‑Protein Breakfasts", explanation: "Protein‑forward AM.", items: [{text:"Eggs"},{text:"Greek Yogurt"},{text:"Cottage Cheese"},{text:"Protein Pancakes"}] },
-        { name: "Citrus‑Adjacent Fruits", explanation: "Similar bright use.", items: [{text:"Pineapple"},{text:"Kiwi"},{text:"Pomegranate"},{text:"Passion Fruit"}] },
-        { name: "Nitrate‑Rich Veg", explanation: "Support blood flow.", items: [{text:"Beetroot"},{text:"Spinach"},{text:"Romaine"},{text:"Arugula"}] },
-        { name: "Frozen Desserts", explanation: "Cold sweet treats.", items: [{text:"Popsicle"},{text:"Sorbet"},{text:"Ice Cream Bar"},{text:"Frozen Yogurt"}] },
-      ]},
-      { id: "sep-2025-15", title: "Beans & Legumes, Low‑Carb Veg, Organ Meats, Sweet Spreads", categories: [
-        { name: "Legumes", explanation: "Beans/peas/lentils.", items: [{text:"Black Beans"},{text:"Kidney Beans"},{text:"Chickpeas"},{text:"Lentils"}] },
-        { name: "Very Low‑Carb Veg", explanation: "Minimal net carbs.", items: [{text:"Lettuce"},{text:"Cucumber"},{text:"Mushrooms"},{text:"Broccoli Rabe"}] },
-        { name: "Organ Meats", explanation: "Nutrient‑dense organs.", items: [{text:"Liver"},{text:"Heart"},{text:"Kidney"},{text:"Tripe"}] },
-        { name: "Sugary Spreads", explanation: "Sweet toast toppings.", items: [{text:"Jam"},{text:"Honey"},{text:"Chocolate Spread"},{text:"Marshmallow Fluff"}] },
-      ]},
-      { id: "sep-2025-16", title: "High‑Satiety Snacks, Sea Vegetables, Pickled Foods, Energy Shots", categories: [
-        { name: "Protein‑Forward Snacks", explanation: "Snack, high protein.", items: [{text:"Roasted Edamame"},{text:"Roasted Chickpeas"},{text:"String Cheese"},{text:"Tuna Pack"}] },
-        { name: "Sea Vegetables", explanation: "Edible seaweeds.", items: [{text:"Nori"},{text:"Wakame"},{text:"Kombu"},{text:"Dulse"}] },
-        { name: "Pickled Foods", explanation: "Brined & acidic.", items: [{text:"Pickles"},{text:"Pickled Onions"},{text:"Pickled Beets"},{text:"Pickled Jalapeños"}] },
-        { name: "Energy Shot Items", explanation: "Quick caffeine.", items: [{text:"Espresso Shot"},{text:"5‑Hour Energy"},{text:"Pre‑Workout Shot"},{text:"Caffeine Shot"}] },
-      ]},
-      { id: "sep-2025-17", title: "Hydration Helpers, Brassicas, Mushrooms, BBQ Classics", categories: [
-        { name: "Hydration Helpers", explanation: "Replace sweat losses.", items: [{text:"Water"},{text:"Electrolyte Drink"},{text:"Coconut Water"},{text:"Broth"}] },
-        { name: "Brassica Greens", explanation: "Leafy brassicas.", items: [{text:"Kale"},{text:"Bok Choy"},{text:"Collard Greens"},{text:"Cabbage"}] },
-        { name: "Edible Mushrooms", explanation: "Culinary fungi.", items: [{text:"Button"},{text:"Shiitake"},{text:"Oyster"},{text:"Portobello"}] },
-        { name: "BBQ Classics", explanation: "Cookout favorites.", items: [{text:"Ribs"},{text:"Pulled Pork"},{text:"Brisket"},{text:"Cornbread"}] },
-      ]},
-      { id: "sep-2025-18", title: "Calcium (Non‑Dairy), Low‑Sugar Fruits, White Fish, Processed Cheese", categories: [
-        { name: "Non‑Dairy Calcium", explanation: "Calcium without dairy.", items: [{text:"Tofu (Calcium‑Set)"},{text:"Tahini"},{text:"Kale"},{text:"Almonds"}] },
-        { name: "Lower‑Sugar Fruits", explanation: "Relatively low sugar.", items: [{text:"Berries"},{text:"Kiwi"},{text:"Grapefruit"},{text:"Cantaloupe"}] },
-        { name: "Lean White Fish", explanation: "Very lean protein.", items: [{text:"Cod"},{text:"Haddock"},{text:"Tilapia"},{text:"Pollock"}] },
-        { name: "Processed Cheese Items", explanation: "Added ingredients.", items: [{text:"American Cheese"},{text:"Cheese Singles"},{text:"Cheese Spread"},{text:"String Cheese (processed)"}] },
-      ]},
-      { id: "sep-2025-19", title: "High‑Protein Plant Snacks, Tropical Fruits, Dips, High‑Sodium Snacks", categories: [
-        { name: "Plant Protein Snacks", explanation: "Portable plant protein.", items: [{text:"Lupini Beans"},{text:"Tofu Bites"},{text:"Roasted Chickpeas"},{text:"Roasted Edamame"}] },
-        { name: "Tropical Fruits", explanation: "Warm‑climate fruits.", items: [{text:"Mango"},{text:"Pineapple"},{text:"Papaya"},{text:"Banana"}] },
-        { name: "Popular Dips", explanation: "Party classics.", items: [{text:"Hummus"},{text:"Guacamole"},{text:"Salsa"},{text:"Spinach Dip"}] },
-        { name: "High‑Sodium Snack Foods", explanation: "Salty packaged picks.", items: [{text:"Pretzels"},{text:"Jerky"},{text:"Cheese Puffs"},{text:"Salted Nuts"}] },
-      ]},
-      { id: "sep-2025-20", title: "Citrus Desserts, Whole Fruit vs Juice, Pseudocereals, Cooking Oils", categories: [
-        { name: "Citrus Desserts", explanation: "Citrus‑forward sweets.", items: [{text:"Lemon Bar"},{text:"Key Lime Pie"},{text:"Orange Sorbet"},{text:"Citrus Tart"}] },
-        { name: "Whole Fruit Wins", explanation: "Whole > juice for satiety.", items: [{text:"Orange (whole)"},{text:"Apple (whole)"},{text:"Grapes (whole)"},{text:"Pineapple Chunks"}] },
-        { name: "Pseudocereals", explanation: "Seeds used like grains.", items: [{text:"Quinoa"},{text:"Buckwheat"},{text:"Amaranth"},{text:"Chia"}] },
-        { name: "Common Cooking Oils", explanation: "Everyday oils.", items: [{text:"Olive Oil"},{text:"Avocado Oil"},{text:"Canola Oil"},{text:"Coconut Oil"}] },
-      ]},
-      { id: "sep-2025-21", title: "Low‑FODMAP Examples, Recovery Carbs, Seafoods, Dessert Toppings", categories: [
-        { name: "Lower‑FODMAP Examples", explanation: "Often tolerated picks.", items: [{text:"Zucchini"},{text:"Carrots"},{text:"Strawberries"},{text:"White Rice"}] },
-        { name: "Recovery Carbs", explanation: "Replenish glycogen.", items: [{text:"White Rice"},{text:"Bagel"},{text:"Pasta"},{text:"Potatoes"}] },
-        { name: "Seafood Proteins", explanation: "Fish & shellfish.", items: [{text:"Salmon"},{text:"Shrimp"},{text:"Tuna"},{text:"Sardines"}] },
-        { name: "Dessert Toppings", explanation: "Sweet add‑ons.", items: [{text:"Whipped Cream"},{text:"Caramel Drizzle"},{text:"Chocolate Chips"},{text:"Sprinkles"}] },
-      ]},
-      { id: "sep-2025-22", title: "High‑Fiber Carbs, Nut Butters, Nightshades, Sports Drinks", categories: [
-        { name: "High‑Fiber Carbs", explanation: "Fiber‑rich staples.", items: [{text:"Barley"},{text:"Quinoa"},{text:"Oats"},{text:"Whole Wheat Pasta"}] },
-        { name: "Nut & Seed Butters", explanation: "Calorie‑dense spreads.", items: [{text:"Peanut Butter"},{text:"Almond Butter"},{text:"Tahini"},{text:"Sunflower Butter"}] },
-        { name: "Nightshade Vegetables", explanation: "Solanaceae family.", items: [{text:"Tomato"},{text:"Eggplant"},{text:"Bell Pepper"},{text:"Potato"}] },
-        { name: "Sports Drinks", explanation: "Carbs + electrolytes.", items: [{text:"Isotonic Drink"},{text:"Electrolyte + Carb Mix"},{text:"Gel + Water"},{text:"High‑Carb Drink"}] },
-      ]},
-      { id: "sep-2025-23", title: "Hearty Bowls, Citrus Oils/Extracts, Cured Fish, Party Foods", categories: [
-        { name: "Hearty Bowl Add‑Ins", explanation: "Make bowls filling.", items: [{text:"Rice"},{text:"Beans"},{text:"Chicken"},{text:"Avocado"}] },
-        { name: "Citrus Oils/Extracts", explanation: "Flavor condensed.", items: [{text:"Orange Oil"},{text:"Lemon Extract"},{text:"Lime Zest"},{text:"Yuzu Juice"}] },
-        { name: "Cured Fish", explanation: "Salt‑cured/brined.", items: [{text:"Lox"},{text:"Anchovies"},{text:"Bacalao"},{text:"Pickled Herring"}] },
-        { name: "Common Party Foods", explanation: "Crowd‑pleasers.", items: [{text:"Pizza"},{text:"Wings"},{text:"Pigs in a Blanket"},{text:"Spinach Artichoke Dip"}] },
-      ]},
-      { id: "sep-2025-24", title: "Breakfast Combos, Seeds & Toppings, Lactose‑Free Milks, Bakery Breads", categories: [
-        { name: "Carb + Protein Combos", explanation: "Balanced snacks.", items: [{text:"Apple + Peanut Butter"},{text:"Yogurt + Granola"},{text:"Crackers + Turkey"},{text:"Banana + Whey"}] },
-        { name: "Seeds & Toppings", explanation: "Nutrient boosts.", items: [{text:"Chia"},{text:"Flax"},{text:"Pumpkin Seeds"},{text:"Sesame Seeds"}] },
-        { name: "Lactose‑Free Milks", explanation: "Alt milks (no lactose).", items: [{text:"Almond Milk"},{text:"Oat Milk"},{text:"Coconut Milk"},{text:"Soy Milk"}] },
-        { name: "Bakery Breads", explanation: "Common bread types.", items: [{text:"Sourdough"},{text:"Baguette"},{text:"Pita"},{text:"Ciabatta"}] },
-      ]},
-      { id: "sep-2025-25", title: "Antioxidant Berries, Game Meats, Marinade Acids, Granolas", categories: [
-        { name: "Berries", explanation: "Antioxidant‑rich.", items: [{text:"Blueberries"},{text:"Raspberries"},{text:"Blackberries"},{text:"Strawberries"}] },
-        { name: "Game Meats", explanation: "Wild/farmed game.", items: [{text:"Venison"},{text:"Bison"},{text:"Duck"},{text:"Rabbit"}] },
-        { name: "Acidic Marinades", explanation: "Tenderize & flavor.", items: [{text:"Lemon Juice"},{text:"Lime Juice"},{text:"Vinegar"},{text:"Yogurt"}] },
-        { name: "Granola/Cereal Mixes", explanation: "Often sweetened.", items: [{text:"Granola"},{text:"Muesli"},{text:"Trail Mix (sweetened)"},{text:"Honey Oat Clusters"}] },
-      ]},
-      { id: "sep-2025-26", title: "Smoked Foods, White vs Whole, Hydrating Vegetables, Candy Bars", categories: [
-        { name: "Smoked Foods", explanation: "Prepared with smoke.", items: [{text:"Smoked Salmon"},{text:"Smoked Turkey"},{text:"Smoked Cheese"},{text:"Smoked Paprika"}] },
-        { name: "White vs Whole (Whole)", explanation: "Higher fiber/whole.", items: [{text:"Whole Wheat Bread"},{text:"Brown Rice"},{text:"Whole Wheat Pasta"},{text:"Oats"}] },
-        { name: "Hydrating Veg", explanation: "High water content.", items: [{text:"Cucumber"},{text:"Tomato"},{text:"Lettuce"},{text:"Celery"}] },
-        { name: "Candy Bars", explanation: "Sugar + fat dense.", items: [{text:"Chocolate Bar"},{text:"Nougat Bar"},{text:"Caramel Bar"},{text:"Peanut Chocolate Bar"}] },
-      ]},
-      { id: "sep-2025-27", title: "Meal Finishers, White Fish Sauces, Refuel Carbs, Processed Breakfast Meats", categories: [
-        { name: "Light Meal Finishers", explanation: "End on lighter note.", items: [{text:"Herbal Tea"},{text:"Fruit Cup"},{text:"Yogurt"},{text:"Berries"}] },
-        { name: "White Fish Pairings", explanation: "Simple sauces/tops.", items: [{text:"Lemon"},{text:"Herb Butter"},{text:"Salsa Verde"},{text:"Pico de Gallo"}] },
-        { name: "Refuel Carbs", explanation: "Post‑workout carbs.", items: [{text:"Rice"},{text:"Pasta"},{text:"Potatoes"},{text:"Bagel"}] },
-        { name: "Processed Breakfast Meats", explanation: "Salty AM meats.", items: [{text:"Bacon"},{text:"Sausage Links"},{text:"Scrapple"},{text:"Canadian Bacon"}] },
-      ]},
-      { id: "sep-2025-28", title: "Caffeine Sources, Citrus Zest Uses, Low‑Cal Sweeteners, Party Desserts", categories: [
-        { name: "Caffeine Sources", explanation: "Naturally or added.", items: [{text:"Coffee"},{text:"Black Tea"},{text:"Energy Drink"},{text:"Dark Chocolate"}] },
-        { name: "Citrus for Zest", explanation: "Common zest fruits.", items: [{text:"Lemon"},{text:"Lime"},{text:"Orange"},{text:"Grapefruit"}] },
-        { name: "Low/No‑Cal Sweeteners", explanation: "Intense sweeteners.", items: [{text:"Stevia"},{text:"Sucralose"},{text:"Ace‑K"},{text:"Aspartame"}] },
-        { name: "Party Desserts", explanation: "Shareable sweets.", items: [{text:"Brownies"},{text:"Cookies"},{text:"Cupcakes"},{text:"Cheesecake Bites"}] },
-      ]},
-      { id: "sep-2025-29", title: "High‑Protein Dairy, Citrus Sodas, White Fish Tacos, Breakfast Pastries", categories: [
-        { name: "High‑Protein Dairy", explanation: "Great protein per cal.", items: [{text:"Greek Yogurt"},{text:"Cottage Cheese"},{text:"Skyr"},{text:"Fairlife Milk"}] },
-        { name: "Citrus‑Flavored Sodas", explanation: "Citrus soft drinks.", items: [{text:"Lemon‑Lime Soda"},{text:"Orange Soda"},{text:"Grapefruit Soda"},{text:"Mountain Dew"}] },
-        { name: "White Fish Taco Bits", explanation: "Classic toppings.", items: [{text:"Cabbage"},{text:"Lime"},{text:"Salsa"},{text:"Corn Tortilla"}] },
-        { name: "Breakfast Pastries", explanation: "Sweet morning bakes.", items: [{text:"Muffin"},{text:"Danish"},{text:"Croissant (sweet)"},{text:"Cinnamon Roll"}] },
-      ]},
-      { id: "sep-2025-30", title: "Lean Red Meats, Citrus Adjuncts, Anti‑Inflammatory Spices, Sugary Spreads", categories: [
-        { name: "Lean Red Meats", explanation: "Lower‑fat cuts.", items: [{text:"Sirloin"},{text:"Eye of Round"},{text:"Top Round"},{text:"Bison"}] },
-        { name: "Citrus Adjuncts", explanation: "Citrus elements.", items: [{text:"Zest"},{text:"Segments"},{text:"Juice"},{text:"Supremes"}] },
-        { name: "Anti‑Inflammatory Spices", explanation: "Studied spices.", items: [{text:"Turmeric"},{text:"Ginger"},{text:"Garlic"},{text:"Cinnamon"}] },
-        { name: "Sugary Spreads", explanation: "High‑sugar toppings.", items: [{text:"Jam"},{text:"Honey"},{text:"Chocolate Spread"},{text:"Marshmallow Fluff"}] },
-      ]},
-    ];
-    PUZZLES.push(...MORE_PUZZLES_SEPT_2025);
-
-    // ---------------- UI Colors ----------------
-    const SOLVE_COLORS = [
-      { tile: "bg-yellow-200 border-yellow-400", header: "bg-yellow-100 border-yellow-300" },
-      { tile: "bg-green-200 border-green-400", header: "bg-green-100 border-green-300" },
-      { tile: "bg-blue-200 border-blue-400", header: "bg-blue-100 border-blue-300" },
-      { tile: "bg-purple-200 border-purple-400", header: "bg-purple-100 border-purple-300" },
-    ];
-
-    // ---------------- Help Sheet ----------------
-    function HelpSheet({ open, onClose }) {
-      if (!open) return null;
-
-      const example = {
-        title: "Example",
-        groups: [
-          { name:"High‑Protein Dairy", items:["Greek Yogurt","Cottage Cheese","Skyr","Fairlife Milk"], color:"bg-yellow-100 border-yellow-300" },
-          { name:"Citrus Fruits", items:["Orange","Grapefruit","Lemon","Lime"], color:"bg-green-100 border-green-300" },
-          { name:"Lean White Fish", items:["Cod","Haddock","Tilapia","Pollock"], color:"bg-blue-100 border-blue-300" },
-          { name:"Sugary Candies", items:["Gummy Bears","Lollipop","Licorice","Caramel"], color:"bg-purple-100 border-purple-300" },
-        ]
-      };
-
-      return (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-          {/* backdrop */}
-          <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-          {/* sheet/card */}
-          <div className="relative w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl border p-4 sm:p-6 max-h-[90vh] overflow-auto"
-               style={{paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)"}}>
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-semibold">How to Play</h2>
-              <button onClick={onClose} className="rounded-lg border px-2 py-1 text-xs hover:bg-gray-100">Close</button>
-            </div>
-            <ol className="list-decimal pl-5 space-y-2 text-sm">
-              <li>Tap <span className="font-semibold">4 tiles</span> that belong together.</li>
-              <li>Press <span className="font-semibold">Submit</span>. If correct, they lock as a group.</li>
-              <li>There are <span className="font-semibold">4 groups</span> total. You get up to <span className="font-semibold">4 mistakes</span>.</li>
-              <li><span className="font-semibold">Daily</span> = today’s puzzle only. Turn on <span className="font-semibold">Practice</span> to browse any day.</li>
-              <li>Share your grid when you finish!</li>
-            </ol>
-
-            <div className="mt-4">
-              <div className="text-sm font-semibold mb-2">Quick Example</div>
-              <div className="grid grid-cols-1 gap-3">
-                {example.groups.map((g, i) => (
-                  <div key={i} className={`rounded-xl p-3 border ${g.color}`}>
-                    <div className="text-sm font-semibold">{g.name}</div>
-                    <div className="mt-1 text-sm">{g.items.join(", ")}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-4 text-xs text-gray-500">
-              Tip: Solved groups color‑code by order: yellow → green → blue → purple.
-            </div>
-
-            <div className="mt-4 flex justify-end">
-              <button onClick={onClose} className="px-4 py-2 rounded-xl bg-black text-white text-sm">Got it</button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // ---------------- App ----------------
-    function App() {
-      const [selected, setSelected] = React.useState([]);
-      const [mistakes, setMistakes] = React.useState(0);
-      const [lockedGroups, setLockedGroups] = React.useState([]); // {categoryIndex, items, order}
-      const [guesses, setGuesses] = React.useState([]);
-      const [shake, setShake] = React.useState(false);
-      const [dayOverride, setDayOverride] = React.useState(null);
-
-      // Practice toggle + streaks + help
-      const [practiceMode, setPracticeMode] = React.useState(() => localStorage.getItem(LS_KEYS.practice) === "1");
-      const [streak, setStreak] = React.useState(() => parseInt(localStorage.getItem(LS_KEYS.streak) || "0", 10));
-      const [bestStreak, setBestStreak] = React.useState(() => parseInt(localStorage.getItem(LS_KEYS.best) || "0", 10));
-      const [showHelp, setShowHelp] = React.useState(() => localStorage.getItem(LS_KEYS.seenHelp) ? false : true);
-
-      React.useEffect(() => {
-        localStorage.setItem(LS_KEYS.practice, practiceMode ? "1" : "0");
-      }, [practiceMode]);
-
-      React.useEffect(() => {
-        if (!showHelp) localStorage.setItem(LS_KEYS.seenHelp, "1");
-      }, [showHelp]);
-
-      const todayIndex = getDayIndex();
-      const dayIndex = practiceMode ? (dayOverride !== null ? dayOverride : todayIndex) : todayIndex;
-
-      const puzzle = PUZZLES[dayIndex];
-      const baseTiles = React.useMemo(() => flattenPuzzle(puzzle), [puzzle]);
-      const [tiles, setTiles] = React.useState([]);
-
-      React.useEffect(() => {
-        const newSeed = Math.floor(Math.random() * 1e9);
-        setSelected([]); setMistakes(0); setLockedGroups([]); setGuesses([]);
-        setTiles(shuffleArray(baseTiles, newSeed));
-      }, [dayIndex, baseTiles]);
-
-      const gameWon = lockedGroups.length === 4;
-      const gameOver = mistakes >= 4 && !gameWon;
-
-      function toggleSelect(id) {
-        if (gameWon || gameOver) return;
-        if (lockedGroups.some((g) => g.items.includes(id))) return;
-        setSelected(prev => {
-          const exists = prev.includes(id);
-          if (exists) return prev.filter(x => x !== id);
-          if (prev.length === 4) return prev;
-          return [...prev, id];
-        });
-      }
-
-      function submitGuess() {
-        if (selected.length !== 4 || gameWon || gameOver) return;
-        const isToday = dayIndex === getDayIndex();
-        const blocked = !practiceMode && !isToday;
-        if (blocked) return; // locked in daily mode
-
-        const cats = selected.map(id => tiles.find(t => t.id === id)?.categoryIndex);
-        const allSame = cats.every(c => c === cats[0]);
-        const alreadyLocked = lockedGroups.some(g => g.categoryIndex === cats[0]);
-
-        if (allSame && !alreadyLocked) {
-          const categoryIndex = cats[0];
-          const newGroup = { categoryIndex, items: [...selected], order: lockedGroups.length };
-          setLockedGroups(prev => [...prev, newGroup]);
-          setGuesses(g => [...g, { correct: true }]);
-          setSelected([]);
-        } else {
-          setMistakes(m => m + 1);
-          setGuesses(g => [...g, { correct: false }]);
-          setShake(true); setTimeout(() => setShake(false), 200);
-        }
-      }
-
-      function shuffleRemaining() {
-        if (gameWon || gameOver) return;
-        const lockedIds = lockedGroups.flatMap(g => g.items);
-        const r = shuffleArray(tiles.filter(t => !lockedIds.includes(t.id)), Math.floor(Math.random() * 1e9));
-        const newTiles = [];
-        lockedGroups.forEach(g => { g.items.forEach(id => newTiles.push(tiles.find(t => t.id === id))); });
-        newTiles.push(...r);
-        setTiles(newTiles);
-      }
-
-      function copyShare() {
-        const header = `Foodle ${puzzle.id} — ${gameWon ? "Win" : "Loss"}`;
-        const grid = formatShareGrid(guesses);
-        const text = `${header}\n${grid}\n${gameWon ? `${guesses.length} guesses` : `X/??`}\n`;
-        navigator.clipboard.writeText(text).then(() => {
-          alert("Results copied to clipboard!");
-        });
-      }
-
-      function resetDay() {
-        const newSeed = Math.floor(Math.random() * 1e9);
-        setSelected([]); setMistakes(0); setLockedGroups([]); setGuesses([]);
-        setTiles(shuffleArray(baseTiles, newSeed));
-      }
-
-      // On round end, update streaks (daily mode only)
-      React.useEffect(() => {
-        if (!(gameWon || gameOver)) return;
-        if (practiceMode) return;
-
-        const today = isoDate();
-        const last = localStorage.getItem(LS_KEYS.lastPlayed);
-
-        let newStreak = streak;
-        if (!last) {
-          newStreak = gameWon ? 1 : 0;
-        } else {
-          const diff = daysBetweenISO(last, today);
-          if (diff === 0) {
-            // already counted today — do nothing
-          } else if (diff === 1 && gameWon) {
-            newStreak = streak + 1;
-          } else if (gameWon) {
-            newStreak = 1; // win but gap days
-          } else {
-            newStreak = 0; // loss breaks
-          }
-        }
-        const newBest = Math.max(bestStreak, newStreak);
-        setStreak(newStreak);
-        setBestStreak(newBest);
-        localStorage.setItem(LS_KEYS.streak, String(newStreak));
-        localStorage.setItem(LS_KEYS.best, String(newBest));
-        localStorage.setItem(LS_KEYS.lastPlayed, today);
-      }, [gameWon, gameOver]);
-
-      // Visual ordering: solved groups first
-      const visualTiles = [];
-      lockedGroups.forEach(g => { g.items.forEach(id => visualTiles.push(tiles.find(t => t.id === id))); });
-      const lockedIds = new Set(lockedGroups.flatMap(g => g.items));
-      tiles.forEach(t => { if (!lockedIds.has(t.id)) visualTiles.push(t); });
-
-      const colorForTile = (tileId) => {
-        const idx = lockedGroups.findIndex(g => g.items.includes(tileId));
-        if (idx === -1) return null;
-        return SOLVE_COLORS[lockedGroups[idx].order];
-      };
-
-      const isToday = dayIndex === getDayIndex();
-      const blockPlay = !practiceMode && !isToday;
-
-      return (
-        <div className="min-h-screen w-full flex items-center justify-center bg-neutral-50 p-3"
-             style={{paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)", paddingTop:"calc(env(safe-area-inset-top) + 12px)"}}>
-          <div className="w-full max-w-xl">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-2xl font-bold">Foodle</h1>
-                <p className="text-sm opacity-70">Daily Nutrition Connections</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={()=>setShowHelp(true)}
-                  aria-label="How to Play"
-                  title="How to Play"
-                  className="rounded-xl border px-3 py-2 text-xs hover:bg-gray-100"
-                >?</button>
-                <div className="text-xs text-gray-600">
-                  <div><span className="font-semibold">Streak:</span> {streak}</div>
-                  <div><span className="font-semibold">Best:</span> {bestStreak}</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">Mistakes:</span>
-                  <div className="flex gap-1">
-                    {[0,1,2,3].map(i => (
-                      <span key={i} className={`inline-block h-3 w-3 rounded-full ${mistakes > i ? "bg-red-500" : "bg-gray-300"}`}/>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-2 flex items-center gap-2">
-              <label className="text-xs opacity-60">Puzzle:</label>
-              <select
-                value={dayIndex}
-                onChange={e => setDayOverride(parseInt(e.target.value,10))}
-                disabled={!practiceMode}
-                className={"text-sm border rounded-md px-2 py-1 " + (!practiceMode ? "opacity-50 cursor-not-allowed" : "")}
-              >
-                {PUZZLES.map((p,i) => (<option key={p.id} value={i}>{`${i+1}. ${p.id}`}</option>))}
-              </select>
-              <label className="ml-auto flex items-center gap-2 text-xs select-none">
-                <input type="checkbox" checked={practiceMode} onChange={(e)=>setPracticeMode(e.target.checked)} />
-                <span>Practice mode</span>
-              </label>
-              <button onClick={resetDay} className="text-xs px-2 py-1 rounded-md border hover:bg-gray-100">Reset</button>
-            </div>
-
-            <div className="mb-3">
-              <button onClick={()=>setShowHelp(true)} className="text-[12px] underline text-blue-600">How to Play & Example</button>
-            </div>
-
-            {lockedGroups.length > 0 && (
-              <div className="grid grid-cols-1 gap-3 w-full mb-3">
-                {lockedGroups.map((g, idx) => {
-                  const color = (SOLVE_COLORS[g.order]||{}).header || "bg-green-100 border-green-300";
-                  return (
-                    <div key={`group-${idx}`} className={`rounded-2xl p-3 border ${color}`}>
-                      <div className="text-sm font-semibold">{PUZZLES[dayIndex].categories[g.categoryIndex].name}</div>
-                      <div className="text-xs opacity-70">Solved</div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            <div className={"grid grid-cols-4 gap-2 mb-3 select-none " + (shake ? "shake" : "") }>
-              {visualTiles.map(tile => {
-                const isLocked = lockedGroups.some(g => g.items.includes(tile.id));
-                const isSelected = selected.includes(tile.id);
-                const color = isLocked ? ((colorForTile(tile.id)||{}).tile || "bg-green-200 border-green-300") : "";
-                return (
-                  <button
-                    key={tile.id}
-                    disabled={isLocked || gameWon || gameOver || blockPlay}
-                    onClick={() => toggleSelect(tile.id)}
-                    className={
-                      "h-14 sm:h-20 rounded-2xl border text-sm sm:text-base px-2 flex items-center justify-center text-center leading-snug transition-all " +
-                      (isLocked ? `${color} cursor-default` :
-                        blockPlay ? "bg-gray-100 border-gray-200 cursor-not-allowed" :
-                        isSelected ? "bg-blue-100 border-blue-300" :
-                        "bg-white border-gray-300 hover:bg-gray-50")
-                    }
-                  >
-                    {tile.text}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="flex flex-wrap gap-2 mb-4">
-              <button
-                onClick={submitGuess}
-                disabled={selected.length !== 4 || gameWon || gameOver || blockPlay}
-                className="px-4 py-3 rounded-xl bg-black text-white text-sm sm:text-base disabled:opacity-40"
-              >
-                {blockPlay ? "Locked (Daily)" : "Submit (4)"}
-              </button>
-              <button onClick={() => setSelected([])} disabled={selected.length === 0 || gameWon || gameOver} className="px-4 py-3 rounded-xl border text-sm sm:text-base">Deselect</button>
-              <button onClick={shuffleRemaining} disabled={gameWon || gameOver || blockPlay} className="px-4 py-3 rounded-xl border text-sm sm:text-base">Shuffle</button>
-              <button onClick={copyShare} className="ml-auto px-4 py-3 rounded-xl border text-sm sm:text-base">Share</button>
-            </div>
-
-            {(gameWon || gameOver) && (
-              <div className="rounded-2xl border p-4 bg-white">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">{gameWon ? "You win!" : "Game over"}</h2>
-                  <div className="text-sm opacity-70">{PUZZLES[dayIndex].id}</div>
-                </div>
-                <div className="mt-2 text-sm">{PUZZLES[dayIndex].title}</div>
-                <div className="mt-3 space-y-3">
-                  {PUZZLES[dayIndex].categories.map((cat, idx) => (
-                    <div key={idx} className="rounded-xl p-3 bg-gray-50 border">
-                      <div className="font-semibold text-sm">{cat.name}</div>
-                      <div className="text-xs opacity-70">{cat.explanation}</div>
-                      <div className="mt-1 text-sm">{cat.items.map(i => i.text).join(", ")}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 flex gap-2">
-                  <button onClick={copyShare} className="px-4 py-2 rounded-xl border">Share Result</button>
-                  <button onClick={resetDay} className="px-4 py-2 rounded-xl bg-black text-white">Replay</button>
-                </div>
-              </div>
-            )}
-
-            <div className="mt-6 text-center text-xs opacity-60 space-y-1">
-              <div>Select 4 related foods. Lock all 4 groups with at most 4 mistakes.</div>
-              <div>Daily mode = today only. Switch to Practice to browse.</div>
-            </div>
-          </div>
-
-          {/* Help Sheet */}
-          <HelpSheet open={showHelp} onClose={()=>setShowHelp(false)} />
-        </div>
-      );
-    }
-
-    const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(<App />);
+    });
   </script>
 </body>
 </html>
